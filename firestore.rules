@@ -1,0 +1,171 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidNumber(val, min, max) {
+      return val is number && val >= min && val <= max;
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'photoURL', 'createdAt']) &&
+             (!('name' in data) || isValidString(data.name, 0, 100)) &&
+             (!('email' in data) || isValidString(data.email, 5, 100)) &&
+             (!('photoURL' in data) || isValidString(data.photoURL, 0, 1000)) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidNote(data) {
+      return hasOnlyAllowedFields(['title', 'content', 'category', 'isVoiceNote', 'voiceURL', 'createdAt', 'updatedAt']) &&
+             isValidString(data.title, 0, 200) &&
+             isValidString(data.content, 0, 50000) &&
+             (!('category' in data) || isValidString(data.category, 0, 50)) &&
+             (!('isVoiceNote' in data) || data.isVoiceNote is bool) &&
+             (!('voiceURL' in data) || isValidString(data.voiceURL, 0, 1000)) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
+             (!('updatedAt' in data) || isValidDateString(data.updatedAt));
+    }
+
+    function isValidExpense(data) {
+      return hasOnlyAllowedFields(['amount', 'category', 'description', 'date', 'paymentMethod', 'voucherId', 'createdAt']) &&
+             isValidNumber(data.amount, 0, 1000000000) &&
+             isValidString(data.category, 1, 50) &&
+             (!('description' in data) || isValidString(data.description, 0, 1000)) &&
+             isValidDateString(data.date) &&
+             (!('paymentMethod' in data) || isValidString(data.paymentMethod, 0, 50)) &&
+             (!('voucherId' in data) || isValidString(data.voucherId, 0, 100)) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidIncome(data) {
+      return hasOnlyAllowedFields(['amount', 'source', 'description', 'date', 'createdAt']) &&
+             isValidNumber(data.amount, 0, 1000000000) &&
+             isValidString(data.source, 1, 100) &&
+             (!('description' in data) || isValidString(data.description, 0, 1000)) &&
+             isValidDateString(data.date) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidDebt(data) {
+      return hasOnlyAllowedFields(['personName', 'phoneNumber', 'amount', 'type', 'dueDate', 'status', 'createdAt']) &&
+             isValidString(data.personName, 1, 100) &&
+             (!('phoneNumber' in data) || isValidString(data.phoneNumber, 0, 20)) &&
+             isValidNumber(data.amount, 0, 1000000000) &&
+             data.type in ['borrowed', 'lent'] &&
+             (!('dueDate' in data) || isValidDateString(data.dueDate)) &&
+             data.status in ['pending', 'paid'] &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidSaving(data) {
+      return hasOnlyAllowedFields(['savingsType', 'amount', 'note', 'date', 'createdAt']) &&
+             data.savingsType in ['bank', 'bkash', 'cash'] &&
+             isValidNumber(data.amount, 0, 1000000000) &&
+             (!('note' in data) || isValidString(data.note, 0, 1000)) &&
+             isValidDateString(data.date) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidVoucher(data) {
+      return hasOnlyAllowedFields(['imageURL', 'extractedText', 'totalAmount', 'createdAt']) &&
+             isValidString(data.imageURL, 1, 1000) &&
+             (!('extractedText' in data) || isValidString(data.extractedText, 0, 50000)) &&
+             (!('totalAmount' in data) || isValidNumber(data.totalAmount, 0, 1000000000)) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    function isValidMarketMemo(data) {
+      return hasOnlyAllowedFields(['title', 'items', 'totalAmount', 'createdAt']) &&
+             isValidString(data.title, 1, 200) &&
+             data.items is list &&
+             data.items.size() <= 100 &&
+             isValidNumber(data.totalAmount, 0, 1000000000) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == userId;
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isOwner(userId);
+
+      match /notes/{noteId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidNote(request.resource.data);
+        allow update: if isOwner(userId) && isValidNote(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /expenses/{expenseId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidExpense(request.resource.data);
+        allow update: if isOwner(userId) && isValidExpense(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /income/{incomeId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidIncome(request.resource.data);
+        allow update: if isOwner(userId) && isValidIncome(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /debts/{debtId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidDebt(request.resource.data);
+        allow update: if isOwner(userId) && isValidDebt(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /savings/{savingId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSaving(request.resource.data);
+        allow update: if isOwner(userId) && isValidSaving(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /vouchers/{voucherId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidVoucher(request.resource.data);
+        allow update: if isOwner(userId) && isValidVoucher(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /marketMemos/{memoId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidMarketMemo(request.resource.data);
+        allow update: if isOwner(userId) && isValidMarketMemo(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

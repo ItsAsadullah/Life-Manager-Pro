@@ -1,0 +1,5 @@
+{
+  "name": "Life Manager Pro",
+  "description": "An all-in-one Personal Life Management System for notes, expenses, vouchers, and AI financial analysis.",
+  "requestFramePermissions": ["microphone", "camera"]
+}

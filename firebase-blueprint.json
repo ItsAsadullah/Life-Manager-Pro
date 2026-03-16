@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Basic user profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "A text or voice note",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "isVoiceNote": { "type": "boolean" },
+        "voiceURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "An expense entry",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "paymentMethod": { "type": "string" },
+        "voucherId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "category", "date", "createdAt"]
+    },
+    "Income": {
+      "title": "Income",
+      "description": "An income entry",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "source": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "source", "date", "createdAt"]
+    },
+    "Debt": {
+      "title": "Debt",
+      "description": "A borrowed or lent money entry",
+      "type": "object",
+      "properties": {
+        "personName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["borrowed", "lent"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "paid"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["personName", "amount", "type", "status", "createdAt"]
+    },
+    "Saving": {
+      "title": "Saving",
+      "description": "A savings entry",
+      "type": "object",
+      "properties": {
+        "savingsType": { "type": "string", "enum": ["bank", "bkash", "cash"] },
+        "amount": { "type": "number" },
+        "note": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["savingsType", "amount", "date", "createdAt"]
+    },
+    "Voucher": {
+      "title": "Voucher",
+      "description": "A scanned voucher",
+      "type": "object",
+      "properties": {
+        "imageURL": { "type": "string" },
+        "extractedText": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["imageURL", "createdAt"]
+    },
+    "MarketMemo": {
+      "title": "Market Memo",
+      "description": "A digital market memo with items and total cost",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "unit": { "type": "string" },
+              "unitPrice": { "type": "number" },
+              "total": { "type": "number" }
+            }
+          }
+        },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "items", "totalAmount", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile data"
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "User's notes"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "User's expenses"
+    },
+    "/users/{userId}/income/{incomeId}": {
+      "schema": { "$ref": "#/entities/Income" },
+      "description": "User's income"
+    },
+    "/users/{userId}/debts/{debtId}": {
+      "schema": { "$ref": "#/entities/Debt" },
+      "description": "User's debts"
+    },
+    "/users/{userId}/savings/{savingId}": {
+      "schema": { "$ref": "#/entities/Saving" },
+      "description": "User's savings"
+    },
+    "/users/{userId}/vouchers/{voucherId}": {
+      "schema": { "$ref": "#/entities/Voucher" },
+      "description": "User's scanned vouchers"
+    },
+    "/users/{userId}/marketMemos/{memoId}": {
+      "schema": { "$ref": "#/entities/MarketMemo" },
+      "description": "User's market memos"
+    }
+  }
+}

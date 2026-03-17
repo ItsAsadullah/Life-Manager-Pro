@@ -23,6 +23,8 @@ interface Debt {
   dueDate?: string;
   status: 'pending' | 'paid';
   createdAt: string;
+  updatedAt?: string;
+  totalPaid?: number;
   repayments?: Repayment[];
 }
 
@@ -103,6 +105,7 @@ export const Debts: React.FC = () => {
       type,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       status,
+      totalPaid: 0,
       updatedAt: new Date().toISOString()
     };
 
@@ -139,13 +142,17 @@ export const Debts: React.FC = () => {
       
       await addDoc(collection(db, 'users', user.uid, 'debts', debtId, 'repayments'), repaymentData);
       
-      // Check if total repayments >= debt amount
+      // Update parent debt to trigger onSnapshot listener and update totalPaid
       const debt = debts.find(d => d.id === debtId);
       if (debt) {
-        const totalPaid = (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0) + Number(repaymentAmount);
-        if (totalPaid >= debt.amount) {
-          await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { status: 'paid' });
-        }
+        const currentTotalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
+        const newTotalPaid = currentTotalPaid + Number(repaymentAmount);
+        const newStatus = newTotalPaid >= debt.amount ? 'paid' : 'pending';
+        await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { 
+          status: newStatus,
+          totalPaid: newTotalPaid,
+          updatedAt: new Date().toISOString()
+        });
       }
       
       setIsAddingRepayment(null);
@@ -161,7 +168,21 @@ export const Debts: React.FC = () => {
   const handleDeleteRepayment = async (debtId: string, repaymentId: string) => {
     if (!user || !window.confirm('Delete this payment record?')) return;
     try {
+      const debt = debts.find(d => d.id === debtId);
+      const repaymentToDelete = debt?.repayments?.find(r => r.id === repaymentId);
+      
       await deleteDoc(doc(db, 'users', user.uid, 'debts', debtId, 'repayments', repaymentId));
+      
+      // Update parent debt to trigger onSnapshot listener and update totalPaid
+      if (debt && repaymentToDelete) {
+        const currentTotalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
+        const newTotalPaid = Math.max(0, currentTotalPaid - repaymentToDelete.amount);
+        await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { 
+          totalPaid: newTotalPaid,
+          status: newTotalPaid >= debt.amount ? 'paid' : 'pending',
+          updatedAt: new Date().toISOString()
+        });
+      }
     } catch (error) {
       console.error('Error deleting repayment:', error);
     }
@@ -204,14 +225,14 @@ export const Debts: React.FC = () => {
   const totalBorrowed = debts
     .filter(d => d.type === 'borrowed' && d.status === 'pending')
     .reduce((sum, d) => {
-      const paid = d.repayments?.reduce((s, r) => s + r.amount, 0) || 0;
+      const paid = d.totalPaid !== undefined ? d.totalPaid : (d.repayments?.reduce((s, r) => s + r.amount, 0) || 0);
       return sum + (d.amount - paid);
     }, 0);
     
   const totalLent = debts
     .filter(d => d.type === 'lent' && d.status === 'pending')
     .reduce((sum, d) => {
-      const paid = d.repayments?.reduce((s, r) => s + r.amount, 0) || 0;
+      const paid = d.totalPaid !== undefined ? d.totalPaid : (d.repayments?.reduce((s, r) => s + r.amount, 0) || 0);
       return sum + (d.amount - paid);
     }, 0);
 
@@ -370,7 +391,7 @@ export const Debts: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {debts.map((debt) => {
-              const totalPaid = debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0;
+              const totalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
               const remaining = debt.amount - totalPaid;
               
               return (
@@ -547,7 +568,7 @@ export const Debts: React.FC = () => {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         {debts.map((debt) => {
-          const totalPaid = debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0;
+          const totalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
           const remaining = debt.amount - totalPaid;
           const isExpanded = expandedId === debt.id;
 

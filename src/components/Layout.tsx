@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins } from 'lucide-react';
 import { useState } from 'react';
 
 export const Layout: React.FC = () => {
@@ -13,6 +13,7 @@ export const Layout: React.FC = () => {
     { to: '/notes', icon: <StickyNote size={20} />, label: 'Notes' },
     { to: '/market-memo', icon: <ShoppingCart size={20} />, label: 'Market Memo' },
     { to: '/expenses', icon: <Receipt size={20} />, label: 'Expenses' },
+    { to: '/debts', icon: <HandCoins size={20} />, label: 'Debts' },
     { to: '/scanner', icon: <ScanLine size={20} />, label: 'Voucher Scanner' },
     { to: '/chatbot', icon: <Bot size={20} />, label: 'AI Chatbot' },
     { to: '/image-gen', icon: <ImageIcon size={20} />, label: 'Image Gen' },

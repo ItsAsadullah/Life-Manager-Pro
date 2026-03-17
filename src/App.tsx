@@ -7,6 +7,7 @@ import { Notes } from './pages/Notes';
 import { MarketMemo } from './pages/MarketMemo';
 import { SharedMemoView } from './pages/SharedMemoView';
 import { Expenses } from './pages/Expenses';
+import { Debts } from './pages/Debts';
 import { Scanner } from './pages/Scanner';
 import { Chatbot } from './pages/Chatbot';
 import { ImageGen } from './pages/ImageGen';
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="notes" element={<Notes />} />
             <Route path="market-memo" element={<MarketMemo />} />
             <Route path="expenses" element={<Expenses />} />
+            <Route path="debts" element={<Debts />} />
             <Route path="scanner" element={<Scanner />} />
             <Route path="chatbot" element={<Chatbot />} />
             <Route path="image-gen" element={<ImageGen />} />

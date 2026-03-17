@@ -480,8 +480,8 @@ export const MarketMemo: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{t('marketMemo')}</h2>
-          <p className="text-gray-600">{t('createBazaarList')}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('marketMemo')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{t('createBazaarList')}</p>
         </div>
         <button
           onClick={handleNewMemo}
@@ -493,14 +493,14 @@ export const MarketMemo: React.FC = () => {
       </div>
 
       {isAdding && createPortal(
-        <div className="fixed inset-0 z-[9999] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
-          <div className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-20">
-            <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? t('editMarketMemo') : t('createMarketMemo')}</h3>
+        <div className="fixed inset-0 z-[9999] flex flex-col bg-gray-50 dark:bg-gray-900 animate-in slide-in-from-bottom-4">
+          <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white">{editingMemoId ? t('editMarketMemo') : t('createMarketMemo')}</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
-                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-30"
                 title={t('undo')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
@@ -508,7 +508,7 @@ export const MarketMemo: React.FC = () => {
               <button
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
-                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-30"
                 title={t('redo')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
@@ -521,7 +521,7 @@ export const MarketMemo: React.FC = () => {
                 <Save className="w-4 h-4" />
                 {editingMemoId ? t('update') : t('save')}
               </button>
-              <button onClick={closeModal} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+              <button onClick={closeModal} className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -530,21 +530,21 @@ export const MarketMemo: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
             <div className="max-w-4xl mx-auto space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('memoTitle')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('memoTitle')}</label>
                 <input
                   type="text"
                   placeholder={t('memoPlaceholder')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">{t('items')}</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('items')}</h3>
                 <button
                   onClick={() => setIsAddItemVisible(!isAddItemVisible)}
-                  className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 text-sm font-medium transition-colors"
+                  className="flex items-center px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 text-sm font-medium transition-colors"
                 >
                   {isAddItemVisible ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
                   {isAddItemVisible ? t('cancel') : t('addNewItem')}
@@ -552,10 +552,10 @@ export const MarketMemo: React.FC = () => {
               </div>
 
               {isAddItemVisible && (
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700">{t('addItem')}</h4>
-                    {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded">{itemError}</span>}
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('addItem')}</h4>
+                    {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">{itemError}</span>}
                   </div>
                   <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                     <div className="sm:col-span-2 md:col-span-2">
@@ -566,7 +566,7 @@ export const MarketMemo: React.FC = () => {
                         required
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm"
                       />
                     </div>
                     <div>
@@ -575,14 +575,14 @@ export const MarketMemo: React.FC = () => {
                         required
                         value={itemQuantity}
                         onChange={setItemQuantity}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm"
                       />
                     </div>
                     <div>
                       <select
                         value={itemUnit}
                         onChange={(e) => setItemUnit(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm"
                       >
                         {units.map(u => <option key={u} value={u}>{t(u)}</option>)}
                       </select>
@@ -593,7 +593,7 @@ export const MarketMemo: React.FC = () => {
                         required
                         value={itemUnitPrice}
                         onChange={setItemUnitPrice}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm"
                         isPrice={true}
                       />
                     </div>
@@ -612,18 +612,18 @@ export const MarketMemo: React.FC = () => {
 
               {items.length > 0 && (
                 <>
-                  <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-3 shadow-sm">
+                  <div className="mb-4 bg-white dark:bg-gray-800 border border-indigo-100 dark:border-gray-700 rounded-lg p-3 shadow-sm">
                     <div className="flex justify-between text-sm mb-2">
                       <div>
-                        <span className="text-gray-500">{t('purchased')}:</span>{' '}
-                        <span className="font-bold text-green-600">{currencySymbol}{purchasedAmount.toLocaleString()}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t('purchased')}:</span>{' '}
+                        <span className="font-bold text-green-600 dark:text-green-400">{currencySymbol}{purchasedAmount.toLocaleString()}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">{t('remaining')}:</span>{' '}
-                        <span className="font-bold text-red-600">{currencySymbol}{remainingAmount.toLocaleString()}</span>
+                        <span className="text-gray-500 dark:text-gray-400">{t('remaining')}:</span>{' '}
+                        <span className="font-bold text-red-600 dark:text-red-400">{currencySymbol}{remainingAmount.toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div 
                         className="bg-green-500 h-2 rounded-full transition-all duration-500" 
                         style={{ width: `${totalAmount > 0 ? (purchasedAmount / totalAmount) * 100 : 0}%` }}
@@ -631,7 +631,7 @@ export const MarketMemo: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="border border-indigo-200 rounded-lg overflow-hidden shadow-sm">
+                  <div className="border border-indigo-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
                     <table className="w-full text-sm text-left">
                       <thead className="bg-[#9b87f5] text-white">
                         <tr>
@@ -642,31 +642,31 @@ export const MarketMemo: React.FC = () => {
                           <th className="px-3 py-3 w-10 text-center"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-indigo-100 bg-white">
+                      <tbody className="divide-y divide-indigo-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
                         {[...items].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1)).map((item, index) => (
                           inlineEditingId === item.id ? (
-                            <tr key={item.id} className="bg-indigo-50">
+                            <tr key={item.id} className="bg-indigo-50 dark:bg-indigo-900/30">
                               <td className="px-2 py-2">
-                                <input type="text" value={inlineName} onChange={e => setInlineName(e.target.value)} className="w-full px-1 py-1 text-sm border border-indigo-300 rounded" />
+                                <input type="text" value={inlineName} onChange={e => setInlineName(e.target.value)} className="w-full px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded" />
                               </td>
                               <td className="px-2 py-2">
                                 <div className="flex gap-1 justify-center">
-                                  <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-12 px-1 py-1 text-sm border border-indigo-300 rounded text-center" />
-                                  <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 rounded p-0 bg-white">
+                                  <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-12 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-center" />
+                                  <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded p-0">
                                     {units.map(u => <option key={u} value={u}>{t(u)}</option>)}
                                   </select>
                                 </div>
                               </td>
                               <td className="px-2 py-2">
-                                <SwipeableNumberInput value={inlinePrice} onChange={setInlinePrice} className="w-16 px-1 py-1 text-sm border border-indigo-300 rounded text-right ml-auto block" isPrice={true} />
+                                <SwipeableNumberInput value={inlinePrice} onChange={setInlinePrice} className="w-16 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-right ml-auto block" isPrice={true} />
                               </td>
-                              <td className="px-2 py-2 text-right text-sm font-medium text-gray-900">
+                              <td className="px-2 py-2 text-right text-sm font-medium text-gray-900 dark:text-white">
                                 {(Number(inlineQty) * Number(inlinePrice)).toLocaleString()}
                               </td>
                               <td className="px-2 py-2 text-center">
                                 <div className="flex flex-col gap-1 items-center">
-                                  <button onClick={(e) => saveInlineEdit(item.id, e)} className="text-green-600 bg-green-100 hover:bg-green-200 p-1 rounded transition-colors"><Check size={14}/></button>
-                                  <button onClick={cancelInlineEdit} className="text-red-600 bg-red-100 hover:bg-red-200 p-1 rounded transition-colors"><X size={14}/></button>
+                                  <button onClick={(e) => saveInlineEdit(item.id, e)} className="text-green-600 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 p-1 rounded transition-colors"><Check size={14}/></button>
+                                  <button onClick={cancelInlineEdit} className="text-red-600 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 p-1 rounded transition-colors"><X size={14}/></button>
                                 </div>
                               </td>
                             </tr>
@@ -675,24 +675,24 @@ export const MarketMemo: React.FC = () => {
                               key={item.id} 
                               ref={(el) => { itemRefs.current[item.id] = el; }}
                               onClick={() => toggleItemCheck(item.id)}
-                              className={`cursor-pointer transition-colors ${index % 2 === 0 ? 'bg-indigo-50/30' : 'bg-white'} ${item.checked ? 'opacity-50' : ''} ${highlightedItemId === item.id ? 'bg-green-100' : ''}`}
+                              className={`cursor-pointer transition-colors ${index % 2 === 0 ? 'bg-indigo-50/30 dark:bg-gray-700/30' : 'bg-white dark:bg-gray-800'} ${item.checked ? 'opacity-50' : ''} ${highlightedItemId === item.id ? 'bg-green-100 dark:bg-green-900/30' : ''}`}
                             >
                               <td className="px-3 py-3">
-                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
+                                <span className={`${item.checked ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>{item.name}</span>
                               </td>
                               <td className="px-3 py-3 text-center" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
-                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-700'}`}>{item.quantity} {item.unit}</span>
+                                <span className={`${item.checked ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>{item.quantity} {item.unit}</span>
                               </td>
                               <td className="px-3 py-3 text-right" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
-                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.unitPrice}</span>
+                                <span className={`${item.checked ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>{item.unitPrice}</span>
                               </td>
                               <td className="px-3 py-3 text-right" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
-                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900 font-medium'}`}>{item.total}</span>
+                                <span className={`${item.checked ? 'line-through text-gray-500 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100 font-medium'}`}>{item.total}</span>
                               </td>
                               <td className="px-3 py-3 text-center">
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleRemoveItem(item.id); }} 
-                                  className="text-indigo-500 hover:text-red-500 bg-indigo-100 hover:bg-red-100 p-1.5 rounded transition-colors"
+                                  className="text-indigo-500 dark:text-indigo-400 hover:text-red-500 dark:hover:text-red-400 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 p-1.5 rounded transition-colors"
                                 >
                                   <Trash2 size={14} />
                                 </button>
@@ -719,32 +719,32 @@ export const MarketMemo: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {memos.map(memo => (
-          <div key={memo.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <div key={memo.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="font-bold text-lg text-gray-900">{memo.title}</h3>
-                <p className="text-xs text-gray-400">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{memo.title}</h3>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   {memo.createdAt ? format(new Date(memo.createdAt), 'MMM d, yyyy h:mm a') : ''}
                 </p>
               </div>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setSharingMemo(memo)} 
-                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                   title={t('shareMemo')}
                 >
                   <Share2 size={18} />
                 </button>
                 <button 
                   onClick={() => handleEditMemo(memo)} 
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                   title={t('editMemo')}
                 >
                   <Edit2 size={18} />
                 </button>
                 <button 
                   onClick={() => handleDeleteMemo(memo.id)} 
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   title={t('deleteMemo')}
                 >
                   <Trash2 size={18} />
@@ -756,47 +756,47 @@ export const MarketMemo: React.FC = () => {
               <ul className="space-y-2 mb-4">
                 {memo.items.slice(0, 3).map((item: any, idx: number) => (
                   <li key={idx} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{item.name} <span className="text-xs text-gray-400">({item.quantity}{item.unit})</span></span>
-                    <span className="font-medium text-gray-900">{currencySymbol}{item.total}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{item.name} <span className="text-xs text-gray-400 dark:text-gray-500">({item.quantity}{item.unit})</span></span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{currencySymbol}{item.total}</span>
                   </li>
                 ))}
                 {memo.items.length > 3 && (
-                  <li className="text-xs text-gray-400 italic">+{memo.items.length - 3} {t('moreItems')}</li>
+                  <li className="text-xs text-gray-400 dark:text-gray-500 italic">+{memo.items.length - 3} {t('moreItems')}</li>
                 )}
               </ul>
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">{t('purchased')}</span>
-                  <span className="text-green-600 font-bold">{currencySymbol}{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('purchased')}</span>
+                  <span className="text-green-600 dark:text-green-400 font-bold">{currencySymbol}{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">{t('remaining')}</span>
-                  <span className="text-red-600 font-bold">{currencySymbol}{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('remaining')}</span>
+                  <span className="text-red-600 dark:text-red-400 font-bold">{currencySymbol}{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
                 </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-gray-100 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                   <div 
-                    className="bg-indigo-600 h-full transition-all duration-500" 
+                    className="bg-indigo-600 dark:bg-indigo-500 h-full transition-all duration-500" 
                     style={{ width: `${(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0) / memo.totalAmount * 100}%` }}
                   ></div>
                 </div>
               </div>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-medium text-gray-500">{t('totalAmount')}</span>
-                <span className="text-lg font-bold text-indigo-600">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('totalAmount')}</span>
+                <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
               </div>
               
               {memo.expenseId ? (
-                <div className="w-full flex justify-center items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
+                <div className="w-full flex justify-center items-center px-4 py-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg border border-green-200 dark:border-green-800">
                   <CheckCircle size={16} className="mr-2" />
                   <span className="text-sm font-medium">{t('addedToExpenses')}</span>
                 </div>
               ) : (
                 <button
                   onClick={() => handleConvertToExpense(memo)}
-                  className="w-full flex justify-center items-center px-4 py-2 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                  className="w-full flex justify-center items-center px-4 py-2 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                 >
                   <Receipt size={16} className="mr-2" />
                   {t('convertToExpense')}

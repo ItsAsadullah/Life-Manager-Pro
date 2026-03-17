@@ -58,7 +58,7 @@ export const QuickActionFAB: React.FC = () => {
                   onClick={() => handleAction(action)}
                   className="flex items-center group"
                 >
-                  <span className="mr-3 px-3 py-1.5 bg-white text-gray-800 text-[10px] font-black rounded-xl shadow-xl border border-gray-100 whitespace-nowrap uppercase tracking-wider">
+                  <span className="mr-3 px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-[10px] font-black rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 whitespace-nowrap uppercase tracking-wider">
                     {action.label}
                   </span>
                   <div className={`w-12 h-12 ${action.color} text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95`}>
@@ -73,7 +73,7 @@ export const QuickActionFAB: React.FC = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 ${
-            isOpen ? 'bg-gray-900' : 'bg-indigo-600 hover:bg-indigo-700'
+            isOpen ? 'bg-gray-900 dark:bg-gray-700' : 'bg-indigo-600 hover:bg-indigo-700'
           } text-white active:scale-90`}
         >
           <motion.div
@@ -189,17 +189,17 @@ const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   ];
 
   return (
-    <div className="p-4 bg-gray-50">
+    <div className="p-4 bg-gray-50 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-700">{t('calculator')}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <h3 className="font-bold text-gray-700 dark:text-gray-200">{t('calculator')}</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
           <X size={20} />
         </button>
       </div>
       
-      <div className="bg-white p-4 rounded-xl mb-4 text-right shadow-inner border border-gray-100">
-        <div className="text-xs text-gray-400 h-4 mb-1">{equation}</div>
-        <div className="text-2xl font-bold text-gray-900 truncate">{display}</div>
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl mb-4 text-right shadow-inner border border-gray-100 dark:border-gray-700">
+        <div className="text-xs text-gray-400 dark:text-gray-500 h-4 mb-1">{equation}</div>
+        <div className="text-2xl font-bold text-gray-900 dark:text-white truncate">{display}</div>
       </div>
 
       <div className="grid grid-cols-4 gap-2">
@@ -208,7 +208,7 @@ const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             key={i}
             onClick={btn.action}
             className={`h-12 rounded-lg text-sm font-bold transition-all active:scale-95 ${
-              btn.color || 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-100'
+              btn.color || 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-100 dark:border-gray-600'
             } ${btn.className || ''}`}
           >
             {btn.label}

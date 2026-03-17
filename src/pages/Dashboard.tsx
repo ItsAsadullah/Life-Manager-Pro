@@ -79,36 +79,36 @@ export const Dashboard: React.FC = () => {
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 dark:text-gray-100">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">{t('dashboard')}</h2>
-        <div className="hidden md:block text-sm text-gray-500">
-          {t('welcomeBack')}, <span className="font-semibold text-indigo-600">{user?.displayName}</span>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('dashboard')}</h2>
+        <div className="hidden md:block text-sm text-gray-500 dark:text-gray-400">
+          {t('welcomeBack')}, <span className="font-semibold text-indigo-600 dark:text-indigo-400">{user?.displayName}</span>
         </div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('monthlyExpense')}</h3>
-          <p className="text-2xl font-bold text-gray-900">{currencySymbol}{totalExpense.toLocaleString()}</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 dark:text-gray-500">{t('monthlyExpense')}</h3>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{currencySymbol}{totalExpense.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('borrowed')}</h3>
-          <p className="text-2xl font-bold text-red-600">{currencySymbol}{totalBorrowed.toLocaleString()}</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 dark:text-gray-500">{t('borrowed')}</h3>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{currencySymbol}{totalBorrowed.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('lent')}</h3>
-          <p className="text-2xl font-bold text-green-600">{currencySymbol}{totalLent.toLocaleString()}</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 dark:text-gray-500">{t('lent')}</h3>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{currencySymbol}{totalLent.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('notes')}</h3>
-          <p className="text-2xl font-bold text-indigo-600">{notes.length}</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 dark:text-gray-500">{t('notes')}</h3>
+          <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{notes.length}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">{t('expenseAnalysis')}</h3>
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 dark:text-white">{t('expenseAnalysis')}</h3>
           {chartData.length > 0 ? (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -128,14 +128,14 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', backgroundColor: '#1f2937', color: '#f9fafb' }}
                     formatter={(value) => `${currencySymbol}${value}`} 
                   />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap justify-center gap-4 mt-4">
                 {chartData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center text-xs text-gray-500">
+                  <div key={entry.name} className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                     <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                     {entry.name}
                   </div>
@@ -143,33 +143,33 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500">
               <p>{t('noExpenseData')}</p>
             </div>
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">{t('latestNotes')}</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 dark:text-white">{t('latestNotes')}</h3>
           {notes.length > 0 ? (
             <div className="space-y-4">
               {notes.map(note => (
-                <div key={note.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                  <h4 className="font-bold text-gray-900 text-sm">{note.title}</h4>
-                  <p className="text-xs text-gray-500 line-clamp-2 mt-1">{note.content}</p>
+                <div key={note.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer dark:bg-gray-700 dark:hover:bg-gray-600">
+                  <h4 className="font-bold text-gray-900 text-sm dark:text-white">{note.title}</h4>
+                  <p className="text-xs text-gray-500 line-clamp-2 mt-1 dark:text-gray-400">{note.content}</p>
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">
                       {note.createdAt ? format(new Date(note.createdAt), 'MMM d, yyyy') : ''}
                     </span>
                     {note.isVoiceNote && (
-                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{t('voice')}</span>
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded dark:bg-indigo-900/30 dark:text-indigo-300">{t('voice')}</span>
                     )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500">
               <p>{t('noNotesFound')}</p>
             </div>
           )}

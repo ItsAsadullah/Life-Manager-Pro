@@ -96,13 +96,13 @@ export const Scanner: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">{t('scanner')}</h2>
-      <p className="text-gray-600">{t('scannerDescription')}</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('scanner')}</h2>
+      <p className="text-gray-600 dark:text-gray-400">{t('scannerDescription')}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Upload Section */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer relative">
             <input
               type="file"
               accept="image/*"
@@ -113,11 +113,11 @@ export const Scanner: React.FC = () => {
               <img src={preview} alt="Preview" className="max-h-64 mx-auto rounded-lg" />
             ) : (
               <div className="space-y-4">
-                <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="text-sm text-gray-600">
-                  <span className="font-semibold text-indigo-600">{t('clickToUpload')}</span> {t('dragAndDrop')}
+                <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">{t('clickToUpload')}</span> {t('dragAndDrop')}
                 </div>
-                <p className="text-xs text-gray-500">{t('fileTypes')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">{t('fileTypes')}</p>
               </div>
             )}
           </div>
@@ -145,36 +145,36 @@ export const Scanner: React.FC = () => {
 
         {/* Results Section */}
         {extractedText && (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('extractedInfo')}</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">{t('extractedInfo')}</h3>
             
             <div className="flex-1 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('totalAmount')} ({currencySymbol})</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('totalAmount')} ({currencySymbol})</label>
                 <SwipeableNumberInput
                   value={String(totalAmount)}
                   onChange={(val) => setTotalAmount(val ? Number(val) : '')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
                   isPrice={true}
                 />
-                <p className="text-xs text-gray-500 mt-1">{t('editAmountInfo')}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('editAmountInfo')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('rawText')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('rawText')}</label>
                 <textarea
                   value={extractedText}
                   onChange={(e) => setExtractedText(e.target.value)}
                   rows={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
                 />
               </div>
             </div>
 
             <div className="mt-6">
               {saved ? (
-                <div className="flex items-center justify-center p-3 bg-green-50 text-green-700 rounded-lg">
+                <div className="flex items-center justify-center p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg">
                   <CheckCircle className="mr-2" size={20} />
                   {t('savedSuccessfully')}
                 </div>

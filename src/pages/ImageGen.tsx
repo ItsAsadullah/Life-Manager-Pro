@@ -60,40 +60,40 @@ export const ImageGen: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
+        <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
           <ImageIcon size={24} />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{t('imageGen')}</h2>
-          <p className="text-gray-600">{t('imageGenDescription')}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('imageGen')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{t('imageGenDescription')}</p>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm">
             {error}
           </div>
         )}
         <form onSubmit={handleGenerate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('describeImage')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('describeImage')}</label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder={t('askSomething')}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
             />
           </div>
 
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('imageSize')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('imageSize')}</label>
               <select
                 value={size}
                 onChange={(e) => setSize(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="1K">1K ({t('standard')})</option>
                 <option value="2K">2K ({t('highQuality')})</option>
@@ -122,19 +122,19 @@ export const ImageGen: React.FC = () => {
       </div>
 
       {generatedImage && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">{t('result')}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('result')}</h3>
             <a
               href={generatedImage}
               download="generated-image.png"
-              className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+              className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
             >
               <Download size={16} className="mr-2" />
               {t('download')}
             </a>
           </div>
-          <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex justify-center">
+          <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-center">
             <img src={generatedImage} alt="Generated AI" className="max-w-full h-auto object-contain max-h-[600px]" />
           </div>
         </div>

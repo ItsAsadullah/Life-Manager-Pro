@@ -132,43 +132,43 @@ export const Expenses: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-emerald-100 flex items-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mr-4">
-            <ArrowUpCircle className="text-emerald-600" size={24} />
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-emerald-100 dark:border-emerald-900 flex items-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mr-4">
+            <ArrowUpCircle className="text-emerald-600 dark:text-emerald-400" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('monthlyIncome')}</h3>
-            <p className="text-2xl font-bold text-emerald-600">{currencySymbol}{totalIncome.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('monthlyIncome')}</h3>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{currencySymbol}{totalIncome.toLocaleString()}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-red-100 flex items-center">
-          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mr-4">
-            <ArrowDownCircle className="text-red-600" size={24} />
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-red-100 dark:border-red-900 flex items-center">
+          <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center mr-4">
+            <ArrowDownCircle className="text-red-600 dark:text-red-400" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('monthlyExpense')}</h3>
-            <p className="text-2xl font-bold text-red-600">{currencySymbol}{totalExpense.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('monthlyExpense')}</h3>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{currencySymbol}{totalExpense.toLocaleString()}</p>
           </div>
         </div>
       </div>
 
       {isAdding && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-lg font-bold">{t('addTransaction')}</h3>
-              <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('addTransaction')}</h3>
+              <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-1 bg-gray-100 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <button
                   type="button"
                   onClick={() => setActiveTab('expense')}
                   className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    activeTab === 'expense' ? 'bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                   }`}
                 >
                   {t('expense')}
@@ -177,7 +177,7 @@ export const Expenses: React.FC = () => {
                   type="button"
                   onClick={() => setActiveTab('income')}
                   className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    activeTab === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    activeTab === 'income' ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                   }`}
                 >
                   {t('income')}
@@ -186,14 +186,14 @@ export const Expenses: React.FC = () => {
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('amount')} ({currencySymbol})</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('amount')} ({currencySymbol})</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                    <DollarSign className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={18} />
                     <SwipeableNumberInput
                       required
                       value={amount}
                       onChange={setAmount}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       placeholder="0.00"
                       isPrice={true}
                     />
@@ -201,35 +201,35 @@ export const Expenses: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('date')}</label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
 
                 {activeTab === 'expense' ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('category')}</label>
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
                         {categories.map(c => <option key={c} value={c}>{t(c)}</option>)}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('paymentMethod')}</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('paymentMethod')}</label>
                       <select
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
                         {paymentMethods.map(p => <option key={p} value={p}>{t(p)}</option>)}
                       </select>
@@ -237,11 +237,11 @@ export const Expenses: React.FC = () => {
                   </>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('source')}</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('source')}</label>
                     <select
                       value={source}
                       onChange={(e) => setSource(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {incomeSources.map(s => <option key={s} value={s}>{t(s)}</option>)}
                     </select>
@@ -250,13 +250,13 @@ export const Expenses: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('description')}</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={activeTab === 'expense' ? t('expensePlaceholder') : t('incomePlaceholder')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
@@ -276,47 +276,47 @@ export const Expenses: React.FC = () => {
         document.body
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('date')}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('type')}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('categorySource')}</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('description')}</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('amount')}</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('actions')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('date')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('type')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('categorySource')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('description')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('amount')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('actions')}</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50 transition-colors group">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {transaction.date ? format(new Date(transaction.date), 'MMM d, yyyy') : ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-[10px] leading-5 font-bold uppercase rounded-full ${
-                      transaction.type === 'expense' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                      transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300'
                     }`}>
                       {transaction.type === 'expense' ? t('expense') : t('income')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {transaction.type === 'expense' ? t(transaction.category) : t(transaction.source)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {transaction.description || '-'}
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${
-                    transaction.type === 'expense' ? 'text-red-600' : 'text-emerald-600'
+                    transaction.type === 'expense' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}>
                     {transaction.type === 'expense' ? '-' : '+'}{currencySymbol}{transaction.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => setTransactionToDelete({ id: transaction.id, type: transaction.type })}
-                      className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-300 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -325,8 +325,8 @@ export const Expenses: React.FC = () => {
               ))}
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <Receipt className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
                     <p>{t('noTransactions')}</p>
                   </td>
                 </tr>
@@ -339,13 +339,13 @@ export const Expenses: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {transactionToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('delete')}</h3>
-            <p className="text-gray-600 mb-6">{t('confirmDelete')}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('delete')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{t('confirmDelete')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setTransactionToDelete(null)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
               >
                 {t('cancel')}
               </button>

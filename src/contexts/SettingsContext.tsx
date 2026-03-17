@@ -2,13 +2,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Currency = 'BDT' | 'INR' | 'USD';
 type Language = 'bn' | 'en';
+type Theme = 'light' | 'dark';
 
 interface SettingsContextType {
   currency: Currency;
   currencySymbol: string;
   language: Language;
+  theme: Theme;
   setCurrency: (c: Currency) => void;
   setLanguage: (l: Language) => void;
+  toggleTheme: () => void;
   t: (key: string) => string;
 }
 
@@ -25,6 +28,9 @@ const translations: Record<Language, Record<string, string>> = {
     chatbot: 'AI Chatbot',
     imageGen: 'Image Gen',
     settings: 'Settings',
+    theme: 'Theme',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
     logout: 'Logout',
     more: 'More',
     addIncome: 'Add Income',
@@ -225,6 +231,9 @@ const translations: Record<Language, Record<string, string>> = {
     chatbot: 'এআই চ্যাটবট',
     imageGen: 'ইমেজ জেন',
     settings: 'সেটিংস',
+    theme: 'থিম',
+    lightMode: 'লাইট মোড',
+    darkMode: 'ডার্ক মোড',
     logout: 'লগআউট',
     more: 'আরও',
     addIncome: 'আয় যুক্ত করুন',
@@ -426,6 +435,7 @@ const currencySymbols: Record<Currency, string> = {
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<Currency>(() => (localStorage.getItem('currency') as Currency) || 'BDT');
   const [language, setLanguageState] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'bn');
+  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
 
   useEffect(() => {
     localStorage.setItem('currency', currency);
@@ -435,8 +445,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('language', language);
   }, [language]);
 
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   const setCurrency = (c: Currency) => setCurrencyState(c);
   const setLanguage = (l: Language) => setLanguageState(l);
+  const toggleTheme = () => setThemeState(prev => prev === 'light' ? 'dark' : 'light');
 
   const t = (key: string) => {
     return translations[language][key] || key;
@@ -445,7 +465,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const currencySymbol = currencySymbols[currency];
 
   return (
-    <SettingsContext.Provider value={{ currency, currencySymbol, language, setCurrency, setLanguage, t }}>
+    <SettingsContext.Provider value={{ currency, currencySymbol, language, theme, setCurrency, setLanguage, toggleTheme, t }}>
       {children}
     </SettingsContext.Provider>
   );

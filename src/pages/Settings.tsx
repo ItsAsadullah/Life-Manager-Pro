@@ -3,11 +3,12 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { Globe, DollarSign, Download, Upload, Check, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Globe, DollarSign, Download, Upload, Check, AlertCircle, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export const Settings: React.FC = () => {
-  const { currency, setCurrency, language, setLanguage, t } = useSettings();
+  const { currency, setCurrency, language, setLanguage, theme, toggleTheme, t } = useSettings();
   const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -98,19 +99,35 @@ export const Settings: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Language Section */}
-      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      {/* Theme Section */}
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg dark:bg-purple-900 dark:text-purple-300">
+            {theme === 'light' ? <Sun size={20} /> : <Moon size={20} />}
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('theme')}</h2>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600 dark:text-gray-300">
+            {theme === 'light' ? t('lightMode') : t('darkMode')}
+          </span>
+          <ThemeToggle />
+        </div>
+      </section>
+
+      {/* Language Section */}
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg dark:bg-indigo-900 dark:text-indigo-300">
             <Globe size={20} />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('language')}</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('language')}</h2>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setLanguage('bn')}
             className={`p-4 rounded-xl border-2 transition-all text-center ${
-              language === 'bn' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'
+              language === 'bn' ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200' : 'border-gray-100 hover:border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'
             }`}
           >
             <span className="block text-lg font-bold mb-1">বাংলা</span>
@@ -119,7 +136,7 @@ export const Settings: React.FC = () => {
           <button
             onClick={() => setLanguage('en')}
             className={`p-4 rounded-xl border-2 transition-all text-center ${
-              language === 'en' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'
+              language === 'en' ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200' : 'border-gray-100 hover:border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'
             }`}
           >
             <span className="block text-lg font-bold mb-1">English</span>

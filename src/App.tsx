@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Notes } from './pages/Notes';
 import { MarketMemo } from './pages/MarketMemo';
+import { SharedMemoView } from './pages/SharedMemoView';
 import { Expenses } from './pages/Expenses';
 import { Scanner } from './pages/Scanner';
 import { Chatbot } from './pages/Chatbot';
@@ -24,6 +25,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/shared-memo" element={<SharedMemoView />} />
           <Route
             path="/"
             element={

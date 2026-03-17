@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle } from 'lucide-react';
+import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface MemoItem {
   id: string;
@@ -13,6 +15,136 @@ interface MemoItem {
   unitPrice: number;
   total: number;
 }
+
+const PRICE_SNAPS = [
+  0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 
+  120, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 
+  1200, 1500, 2000, 2500, 3000, 4000, 5000, 10000
+];
+
+interface SwipeableNumberInputProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  className?: string;
+  required?: boolean;
+  isPrice?: boolean;
+}
+
+let audioCtx: AudioContext | null = null;
+const playTick = () => {
+  try {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+  } catch (e) {
+    // ignore audio errors
+  }
+};
+
+const SwipeableNumberInput: React.FC<SwipeableNumberInputProps> = ({ value, onChange, placeholder, className, required, isPrice }) => {
+  const [startY, setStartY] = useState<number | null>(null);
+  const [startValue, setStartValue] = useState<number>(0);
+  const [startIndex, setStartIndex] = useState<number>(0);
+  const [lastTickValue, setLastTickValue] = useState<number>(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartY(e.touches[0].clientY);
+    const initialVal = Number(value) || 0;
+    setStartValue(initialVal);
+    setLastTickValue(initialVal);
+
+    if (isPrice) {
+      let closestIdx = 0;
+      let minDiff = Infinity;
+      PRICE_SNAPS.forEach((snap, idx) => {
+        if (Math.abs(snap - initialVal) < minDiff) {
+          minDiff = Math.abs(snap - initialVal);
+          closestIdx = idx;
+        }
+      });
+      setStartIndex(closestIdx);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startY === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = startY - currentY; // positive if swiping up
+
+    let newValue = 0;
+
+    if (isPrice) {
+      const step = Math.floor(diff / 8); // High sensitivity
+      const newIdx = Math.max(0, Math.min(PRICE_SNAPS.length - 1, startIndex + step));
+      newValue = PRICE_SNAPS[newIdx];
+    } else {
+      const step = Math.floor(diff / 15);
+      newValue = Math.max(0, startValue + step);
+    }
+
+    if (newValue !== lastTickValue) {
+       onChange(String(newValue));
+       setLastTickValue(newValue);
+       
+       // Haptic feedback
+       if (navigator.vibrate) {
+         navigator.vibrate(10);
+       }
+       // Sound
+       playTick();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setStartY(null);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    const b2e: Record<string, string> = {'০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'};
+    val = val.replace(/[০-৯]/g, m => b2e[m]);
+    val = val.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+    onChange(val);
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={value}
+      onChange={handleChange}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      placeholder={placeholder}
+      className={className}
+      required={required}
+      style={{ touchAction: 'none' }}
+    />
+  );
+};
 
 export const MarketMemo: React.FC = () => {
   const { user } = useAuth();
@@ -24,18 +156,145 @@ export const MarketMemo: React.FC = () => {
   
   // New item form state
   const [itemName, setItemName] = useState('');
-  const [itemQuantity, setItemQuantity] = useState<number | ''>('');
+  const [itemQuantity, setItemQuantity] = useState<string>('');
   const [itemUnit, setItemUnit] = useState('kg');
-  const [itemUnitPrice, setItemUnitPrice] = useState<number | ''>('');
+  const [itemUnitPrice, setItemUnitPrice] = useState<string>('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemError, setItemError] = useState('');
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [editingMemoExpenseId, setEditingMemoExpenseId] = useState<string | null>(null);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [sharingMemo, setSharingMemo] = useState<any>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+
+  const handleShareText = (memo: any) => {
+    let text = `🛒 Market Memo: ${memo.title}\n`;
+    if (memo.createdAt) {
+      text += `📅 Date: ${format(new Date(memo.createdAt), 'MMM d, yyyy')}\n`;
+    }
+    text += `------------------------\n`;
+    memo.items.forEach((item: any, index: number) => {
+      text += `${index + 1}. ${item.name} - ${item.quantity}${item.unit} @ ৳${item.unitPrice} = ৳${item.total}\n`;
+    });
+    text += `------------------------\n`;
+    text += `💰 Total: ৳${memo.totalAmount.toLocaleString()}\n\n`;
+    text += `Created with Hisab Nikash App\n`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: memo.title,
+        text: text,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(text);
+      setSuccessMessage('Copied to clipboard!');
+    }
+    setSharingMemo(null);
+  };
+
+  const handleShareImage = async (memo: any) => {
+    const element = document.getElementById(`memo-capture-${memo.id}`);
+    if (!element) return;
+    
+    try {
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById(`memo-capture-${memo.id}`);
+          if (clonedElement) {
+            clonedElement.style.position = 'static';
+            clonedElement.style.left = 'auto';
+            clonedElement.style.top = 'auto';
+          }
+        }
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      const link = document.createElement('a');
+      link.download = `Market_Memo_${memo.title.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+      setSuccessMessage('Image downloaded!');
+    } catch (err) {
+      console.error('Failed to generate image', err);
+    } finally {
+      setSharingMemo(null);
+    }
+  };
+
+  const handleSharePDF = async (memo: any) => {
+    const element = document.getElementById(`memo-capture-${memo.id}`);
+    if (!element) return;
+    
+    try {
+      const canvas = await html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById(`memo-capture-${memo.id}`);
+          if (clonedElement) {
+            clonedElement.style.position = 'static';
+            clonedElement.style.left = 'auto';
+            clonedElement.style.top = 'auto';
+          }
+        }
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`Market_Memo_${memo.title.replace(/\s+/g, '_')}.pdf`);
+      setSuccessMessage('PDF downloaded!');
+    } catch (err) {
+      console.error('Failed to generate PDF', err);
+    } finally {
+      setSharingMemo(null);
+    }
+  };
+
+  const handleShareLink = (memo: any) => {
+    const data = {
+      t: memo.title,
+      i: memo.items.map((item: any) => ({
+        n: item.name,
+        q: item.quantity,
+        u: item.unit,
+        p: item.unitPrice,
+        t: item.total
+      })),
+      ta: memo.totalAmount,
+      d: memo.createdAt
+    };
+    
+    const utf8Bytes = new TextEncoder().encode(JSON.stringify(data));
+    const binString = Array.from(utf8Bytes, (byte) => String.fromCharCode(byte)).join('');
+    const base64 = btoa(binString);
+    
+    const url = `${window.location.origin}/shared-memo?data=${base64}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: memo.title,
+        url: url
+      }).catch((e) => {
+        navigator.clipboard.writeText(url);
+        setSuccessMessage('Link copied to clipboard!');
+      });
+    } else {
+      navigator.clipboard.writeText(url);
+      setSuccessMessage('Link copied to clipboard!');
+    }
+    setSharingMemo(null);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -111,9 +370,9 @@ export const MarketMemo: React.FC = () => {
   const handleEditItem = (item: MemoItem) => {
     setEditingItemId(item.id);
     setItemName(item.name);
-    setItemQuantity(item.quantity);
+    setItemQuantity(String(item.quantity));
     setItemUnit(item.unit);
-    setItemUnitPrice(item.unitPrice);
+    setItemUnitPrice(String(item.unitPrice));
     setItemError('');
 
     // Focus and scroll to input
@@ -175,7 +434,6 @@ export const MarketMemo: React.FC = () => {
         setSuccessMessage('Memo saved successfully!');
       }
       closeModal();
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Error saving memo:', error);
       alert('Failed to save memo.');
@@ -218,7 +476,6 @@ export const MarketMemo: React.FC = () => {
       });
       
       setSuccessMessage('Successfully converted to Expense!');
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Error converting to expense:', error);
       alert('Failed to convert to expense.');
@@ -244,16 +501,16 @@ export const MarketMemo: React.FC = () => {
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center p-6 border-b border-gray-200">
-              <h3 className="text-lg font-bold">{editingMemoId ? 'Edit Market Memo' : 'Create Market Memo'}</h3>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
+          <div className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-20">
+            <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? 'Edit Market Memo' : 'Create Market Memo'}</h3>
+            <button onClick={closeModal} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="max-w-4xl mx-auto space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Memo Title</label>
                 <input
@@ -265,7 +522,7 @@ export const MarketMemo: React.FC = () => {
                 />
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-sm font-semibold text-gray-700">Add Item</h4>
                   {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded">{itemError}</span>}
@@ -283,14 +540,11 @@ export const MarketMemo: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <input
-                      type="number"
+                    <SwipeableNumberInput
                       placeholder="Qty"
                       required
-                      min="0.01"
-                      step="0.01"
                       value={itemQuantity}
-                      onChange={(e) => setItemQuantity(e.target.value ? Number(e.target.value) : '')}
+                      onChange={setItemQuantity}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     />
                   </div>
@@ -304,15 +558,13 @@ export const MarketMemo: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <input
-                      type="number"
+                    <SwipeableNumberInput
                       placeholder="Unit Price (৳)"
                       required
-                      min="0"
-                      step="0.01"
                       value={itemUnitPrice}
-                      onChange={(e) => setItemUnitPrice(e.target.value ? Number(e.target.value) : '')}
+                      onChange={setItemUnitPrice}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      isPrice={true}
                     />
                   </div>
                   <div className="sm:col-span-2 md:col-span-5 flex justify-end gap-2 mt-2">
@@ -358,7 +610,7 @@ export const MarketMemo: React.FC = () => {
                         {items.map((item) => (
                           <tr 
                             key={item.id} 
-                            ref={(el) => (itemRefs.current[item.id] = el)}
+                            ref={(el) => { itemRefs.current[item.id] = el; }}
                             className={`transition-colors duration-700 ${highlightedItemId === item.id ? 'bg-green-100' : 'hover:bg-gray-50'}`}
                           >
                             <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.name}</td>
@@ -394,7 +646,7 @@ export const MarketMemo: React.FC = () => {
                     {items.map((item) => (
                       <div 
                         key={item.id} 
-                        ref={(el) => (itemRefs.current[item.id] = el)}
+                        ref={(el) => { itemRefs.current[item.id] = el; }}
                         className={`border rounded-lg p-4 shadow-sm transition-colors duration-700 ${highlightedItemId === item.id ? 'bg-green-100 border-green-300' : 'bg-white border-gray-200'}`}
                       >
                         <div className="flex justify-between items-start mb-2">
@@ -423,14 +675,16 @@ export const MarketMemo: React.FC = () => {
                 </>
               )}
             </div>
-            
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+          </div>
+          
+          <div className="p-4 bg-white border-t sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <div className="max-w-4xl mx-auto flex justify-end">
               <button
                 onClick={handleSaveMemo}
                 disabled={items.length === 0 || !title.trim()}
-                className="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium w-full md:w-auto transition-colors disabled:opacity-50"
               >
-                <Save size={20} className="mr-2" />
+                <Save className="w-5 h-5" />
                 {editingMemoId ? 'Update Memo' : 'Save Memo'}
               </button>
             </div>
@@ -449,6 +703,13 @@ export const MarketMemo: React.FC = () => {
                 </p>
               </div>
               <div className="flex gap-2">
+                <button 
+                  onClick={() => setSharingMemo(memo)} 
+                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                  title="Share Memo"
+                >
+                  <Share2 size={18} />
+                </button>
                 <button 
                   onClick={() => handleEditMemo(memo)} 
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -501,6 +762,41 @@ export const MarketMemo: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {/* Hidden Capture Div for Image/PDF */}
+            <div id={`memo-capture-${memo.id}`} className="absolute left-[-9999px] top-[-9999px] bg-white p-8 w-[600px] font-sans">
+              <div className="border-b-2 border-indigo-600 pb-4 mb-6">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">🛒 Market Memo</h2>
+                <h3 className="text-xl text-gray-700">{memo.title}</h3>
+                {memo.createdAt && <p className="text-gray-500 mt-2">Date: {format(new Date(memo.createdAt), 'MMMM d, yyyy')}</p>}
+              </div>
+              
+              <table className="w-full mb-6">
+                <thead>
+                  <tr className="border-b border-gray-300 text-left">
+                    <th className="py-2 text-gray-600">Item</th>
+                    <th className="py-2 text-right text-gray-600">Qty</th>
+                    <th className="py-2 text-right text-gray-600">Price</th>
+                    <th className="py-2 text-right text-gray-600">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {memo.items.map((item: any, idx: number) => (
+                    <tr key={idx} className="border-b border-gray-100">
+                      <td className="py-3 text-gray-900 font-medium">{item.name}</td>
+                      <td className="py-3 text-right text-gray-600">{item.quantity} {item.unit}</td>
+                      <td className="py-3 text-right text-gray-600">৳{item.unitPrice}</td>
+                      <td className="py-3 text-right text-gray-900 font-bold">৳{item.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
+                <span className="text-xl font-bold text-indigo-900">Grand Total</span>
+                <span className="text-2xl font-bold text-indigo-700">৳{memo.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
         ))}
         {memos.length === 0 && !isAdding && (
@@ -511,10 +807,50 @@ export const MarketMemo: React.FC = () => {
         )}
       </div>
 
+      {/* Share Modal */}
+      {sharingMemo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative">
+            <button 
+              onClick={() => setSharingMemo(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Share Memo</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => handleShareText(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
+                <FileText size={24} className="mb-2" />
+                <span className="text-sm font-medium">Text</span>
+              </button>
+              <button onClick={() => handleShareImage(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
+                <ImageIcon size={24} className="mb-2" />
+                <span className="text-sm font-medium">Image</span>
+              </button>
+              <button onClick={() => handleSharePDF(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
+                <FileText size={24} className="mb-2" />
+                <span className="text-sm font-medium">PDF</span>
+              </button>
+              <button onClick={() => handleShareLink(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
+                <LinkIcon size={24} className="mb-2" />
+                <span className="text-sm font-medium">Link</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {successMessage && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center max-w-sm w-full">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center max-w-sm w-full relative">
+            <button 
+              onClick={() => setSuccessMessage(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>

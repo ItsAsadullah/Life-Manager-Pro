@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
@@ -148,8 +149,16 @@ const SwipeableNumberInput: React.FC<SwipeableNumberInputProps> = ({ value, onCh
 
 export const MarketMemo: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [memos, setMemos] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAdding(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   
   const [title, setTitle] = useState('');
   const [items, setItems] = useState<MemoItem[]>([]);

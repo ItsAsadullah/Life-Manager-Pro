@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Mic, MicOff, Plus, Save, X } from 'lucide-react';
@@ -7,8 +8,16 @@ import { format } from 'date-fns';
 
 export const Notes: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [notes, setNotes] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAdding(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('Personal');

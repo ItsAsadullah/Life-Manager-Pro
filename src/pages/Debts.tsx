@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Plus, Save, X, Trash2, Edit2, CheckCircle, Clock, User, Phone, DollarSign, Calendar, History, ArrowDownCircle, ArrowUpCircle, ChevronDown, ChevronUp } from 'lucide-react';
@@ -27,8 +28,16 @@ interface Debt {
 
 export const Debts: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAdding(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -114,7 +123,11 @@ export const Debts: React.FC = () => {
   };
 
   const handleAddRepayment = async (debtId: string) => {
-    if (!user || !repaymentAmount) return;
+    if (!user) return;
+    if (!repaymentAmount) {
+      alert('Please enter repayment amount');
+      return;
+    }
     
     try {
       const repaymentData = {
@@ -138,8 +151,10 @@ export const Debts: React.FC = () => {
       setIsAddingRepayment(null);
       setRepaymentAmount('');
       setRepaymentNote('');
+      alert('Payment added successfully!');
     } catch (error) {
       console.error('Error adding repayment:', error);
+      alert('Failed to add payment. Please try again.');
     }
   };
 

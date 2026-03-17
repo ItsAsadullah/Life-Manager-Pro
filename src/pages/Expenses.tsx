@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Plus, Save, X, Receipt, ArrowUpCircle, ArrowDownCircle, DollarSign } from 'lucide-react';
@@ -7,9 +8,21 @@ import { format } from 'date-fns';
 
 export const Expenses: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAdding(true);
+      if (location.state.type) {
+        setActiveTab(location.state.type);
+      }
+      // Clear state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
   
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');

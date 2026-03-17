@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, DollarSign } from 'lucide-react';
+import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, DollarSign, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -9,18 +9,18 @@ export const QuickActionFAB: React.FC = () => {
   const navigate = useNavigate();
 
   const actions = [
-    { icon: <StickyNote size={20} />, label: 'Quick Note', color: 'bg-blue-500', path: '/notes' },
-    { icon: <ShoppingCart size={20} />, label: 'Market Memo', color: 'bg-green-500', path: '/market-memo' },
-    { icon: <HandCoins size={20} />, label: 'Add Debt/Loan', color: 'bg-purple-500', path: '/debts' },
-    { icon: <Receipt size={20} />, label: 'Add Expense', color: 'bg-red-500', path: '/expenses' },
-    { icon: <DollarSign size={20} />, label: 'Add Income', color: 'bg-emerald-500', path: '/expenses' },
-    { icon: <CalcIcon size={20} />, label: 'Calculator', color: 'bg-orange-500', action: () => setShowCalculator(true) },
+    { icon: <ArrowDownCircle size={20} />, label: 'আয় (Income)', color: 'bg-emerald-500', path: '/expenses', state: { openAddModal: true, type: 'income' } },
+    { icon: <ArrowUpCircle size={20} />, label: 'খরচ (Expense)', color: 'bg-rose-500', path: '/expenses', state: { openAddModal: true, type: 'expense' } },
+    { icon: <HandCoins size={20} />, label: 'ধার/লোন (Debt)', color: 'bg-amber-500', path: '/debts', state: { openAddModal: true } },
+    { icon: <ShoppingCart size={20} />, label: 'বাজার লিস্ট (Market)', color: 'bg-blue-500', path: '/market-memo', state: { openAddModal: true } },
+    { icon: <StickyNote size={20} />, label: 'নোটস (Notes)', color: 'bg-purple-500', path: '/notes', state: { openAddModal: true } },
+    { icon: <CalcIcon size={20} />, label: 'ক্যালকুলেটর', color: 'bg-gray-600', action: () => setShowCalculator(true) },
   ];
 
   const handleAction = (action: any) => {
     setIsOpen(false);
     if (action.path) {
-      navigate(action.path);
+      navigate(action.path, { state: action.state });
     } else if (action.action) {
       action.action();
     }
@@ -28,10 +28,23 @@ export const QuickActionFAB: React.FC = () => {
 
   return (
     <>
-      <div className="fixed bottom-24 md:bottom-8 right-6 z-50">
+      {/* Overlay when open */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="fixed bottom-24 md:bottom-8 right-6 z-50 flex flex-col items-end">
         <AnimatePresence>
           {isOpen && (
-            <div className="flex flex-col-reverse items-end mb-4 space-y-reverse space-y-3">
+            <div className="flex flex-col-reverse items-end mb-4 space-y-reverse space-y-4">
               {actions.map((action, index) => (
                 <motion.button
                   key={action.label}
@@ -42,10 +55,10 @@ export const QuickActionFAB: React.FC = () => {
                   onClick={() => handleAction(action)}
                   className="flex items-center group"
                 >
-                  <span className="mr-3 px-2 py-1 bg-white text-gray-700 text-xs font-bold rounded-md shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="mr-3 px-3 py-1.5 bg-white text-gray-800 text-[10px] font-black rounded-xl shadow-xl border border-gray-100 whitespace-nowrap uppercase tracking-wider">
                     {action.label}
                   </span>
-                  <div className={`w-12 h-12 ${action.color} text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform`}>
+                  <div className={`w-12 h-12 ${action.color} text-white rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 transition-transform active:scale-95`}>
                     {action.icon}
                   </div>
                 </motion.button>
@@ -56,11 +69,16 @@ export const QuickActionFAB: React.FC = () => {
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
-            isOpen ? 'bg-gray-800 rotate-45' : 'bg-indigo-600 hover:bg-indigo-700'
-          } text-white`}
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 ${
+            isOpen ? 'bg-gray-900' : 'bg-indigo-600 hover:bg-indigo-700'
+          } text-white active:scale-90`}
         >
-          <Plus size={32} />
+          <motion.div
+            animate={{ rotate: isOpen ? 45 : 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          >
+            <Plus size={32} />
+          </motion.div>
         </button>
       </div>
 

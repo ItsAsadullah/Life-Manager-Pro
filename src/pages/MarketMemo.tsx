@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -181,6 +181,8 @@ export const MarketMemo: React.FC = () => {
     });
     text += `------------------------\n`;
     text += `💰 Total: ৳${memo.totalAmount.toLocaleString()}\n\n`;
+    text += `Developed by: Asadullah Al Galib\n`;
+    text += `B.Sc in CSE, 01911777694\n`;
     text += `Created with Hisab Nikash App\n`;
 
     if (navigator.share) {
@@ -199,22 +201,21 @@ export const MarketMemo: React.FC = () => {
     const element = document.getElementById(`memo-capture-${memo.id}`);
     if (!element) return;
     
-    // Temporarily move on-screen for accurate capture
-    const originalPosition = element.style.position;
-    const originalLeft = element.style.left;
-    const originalTop = element.style.top;
-    const originalZIndex = element.style.zIndex;
-    
-    element.style.position = 'absolute';
-    element.style.left = '0';
+    // Ensure element is visible for capture
+    const originalStyle = element.getAttribute('style') || '';
+    element.style.display = 'block';
+    element.style.position = 'fixed';
+    element.style.left = '-9999px';
     element.style.top = '0';
-    element.style.zIndex = '-1000';
+    element.style.visibility = 'visible';
     
     try {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
       });
       const dataUrl = canvas.toDataURL('image/png');
       
@@ -227,11 +228,7 @@ export const MarketMemo: React.FC = () => {
       console.error('Failed to generate image', err);
       alert('Failed to generate image. Please try again.');
     } finally {
-      // Restore original position
-      element.style.position = originalPosition;
-      element.style.left = originalLeft;
-      element.style.top = originalTop;
-      element.style.zIndex = originalZIndex;
+      element.setAttribute('style', originalStyle);
       setSharingMemo(null);
     }
   };
@@ -240,22 +237,21 @@ export const MarketMemo: React.FC = () => {
     const element = document.getElementById(`memo-capture-${memo.id}`);
     if (!element) return;
     
-    // Temporarily move on-screen for accurate capture
-    const originalPosition = element.style.position;
-    const originalLeft = element.style.left;
-    const originalTop = element.style.top;
-    const originalZIndex = element.style.zIndex;
-    
-    element.style.position = 'absolute';
-    element.style.left = '0';
+    // Ensure element is visible for capture
+    const originalStyle = element.getAttribute('style') || '';
+    element.style.display = 'block';
+    element.style.position = 'fixed';
+    element.style.left = '-9999px';
     element.style.top = '0';
-    element.style.zIndex = '-1000';
+    element.style.visibility = 'visible';
     
     try {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
       });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -270,11 +266,7 @@ export const MarketMemo: React.FC = () => {
       console.error('Failed to generate PDF', err);
       alert('Failed to generate PDF. Please try again.');
     } finally {
-      // Restore original position
-      element.style.position = originalPosition;
-      element.style.left = originalLeft;
-      element.style.top = originalTop;
-      element.style.zIndex = originalZIndex;
+      element.setAttribute('style', originalStyle);
       setSharingMemo(null);
     }
   };
@@ -284,8 +276,14 @@ export const MarketMemo: React.FC = () => {
     
     let url = '';
     try {
-      // Save to sharedMemos collection to keep the link short and clean
-      const sharedMemoRef = doc(collection(db, 'sharedMemos'));
+      // Generate a shorter ID for the shared memo (8 characters)
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0120093908';
+      let shortId = '';
+      for (let i = 0; i < 8; i++) {
+        shortId += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+
+      const sharedMemoRef = doc(db, 'sharedMemos', shortId);
       await setDoc(sharedMemoRef, {
         title: memo.title,
         items: memo.items,
@@ -295,7 +293,7 @@ export const MarketMemo: React.FC = () => {
         sharedAt: new Date().toISOString()
       });
 
-      url = `${window.location.origin}/shared-memo?id=${sharedMemoRef.id}`;
+      url = `${window.location.origin}/shared-memo?id=${shortId}`;
     } catch (error) {
       console.error("Error sharing memo to Firestore, falling back to base64:", error);
       // Fallback to base64 encoding if Firestore fails
@@ -839,6 +837,12 @@ export const MarketMemo: React.FC = () => {
               <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
                 <span className="text-xl font-bold text-indigo-900">Grand Total</span>
                 <span className="text-2xl font-bold text-indigo-700">৳{memo.totalAmount.toLocaleString()}</span>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100 text-center text-xs text-gray-400">
+                <p className="font-bold text-gray-500 mb-1">Developed by: Asadullah Al Galib</p>
+                <p className="mb-2">B.Sc in CSE, 01911777694</p>
+                <p>Created with Hisab Nikash App</p>
               </div>
             </div>
           </div>

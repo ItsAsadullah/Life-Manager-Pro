@@ -88,7 +88,9 @@ export const SharedMemoView: React.FC = () => {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
       });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -97,6 +99,7 @@ export const SharedMemoView: React.FC = () => {
       link.click();
     } catch (err) {
       console.error('Failed to generate image', err);
+      alert('Failed to generate image. Please try again.');
     }
   };
 
@@ -107,7 +110,9 @@ export const SharedMemoView: React.FC = () => {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true
       });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -119,6 +124,7 @@ export const SharedMemoView: React.FC = () => {
       pdf.save(`Market_Memo_${memo.title.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
       console.error('Failed to generate PDF', err);
+      alert('Failed to generate PDF. Please try again.');
     }
   };
 
@@ -210,7 +216,9 @@ export const SharedMemoView: React.FC = () => {
               <span className="text-3xl font-bold text-indigo-600">৳{memo.totalAmount.toLocaleString()}</span>
             </div>
             
-            <div className="mt-8 text-center text-sm text-gray-400">
+            <div className="mt-8 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
+              <p className="font-bold text-gray-500 mb-1">Developed by: Asadullah Al Galib</p>
+              <p className="mb-2">B.Sc in CSE, 01911777694</p>
               <p>Created with Hisab Nikash App</p>
             </div>
           </div>

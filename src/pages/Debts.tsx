@@ -101,7 +101,7 @@ export const Debts: React.FC = () => {
       phoneNumber,
       amount: Number(amount),
       type,
-      dueDate: dueDate || null,
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       status,
       updatedAt: new Date().toISOString()
     };
@@ -132,7 +132,7 @@ export const Debts: React.FC = () => {
     try {
       const repaymentData = {
         amount: Number(repaymentAmount),
-        date: repaymentDate,
+        date: new Date(repaymentDate).toISOString(),
         note: repaymentNote,
         createdAt: new Date().toISOString()
       };

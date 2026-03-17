@@ -73,14 +73,15 @@ service cloud.firestore {
     }
 
     function isValidDebt(data) {
-      return hasOnlyAllowedFields(['personName', 'phoneNumber', 'amount', 'type', 'dueDate', 'status', 'createdAt']) &&
+      return hasOnlyAllowedFields(['personName', 'phoneNumber', 'amount', 'type', 'dueDate', 'status', 'createdAt', 'updatedAt']) &&
              isValidString(data.personName, 1, 100) &&
              (!('phoneNumber' in data) || isValidString(data.phoneNumber, 0, 20)) &&
              isValidNumber(data.amount, 0, 1000000000) &&
              data.type in ['borrowed', 'lent'] &&
-             (!('dueDate' in data) || isValidDateString(data.dueDate)) &&
+             (!('dueDate' in data) || data.dueDate == null || isValidDateString(data.dueDate)) &&
              data.status in ['pending', 'paid'] &&
-             (!('createdAt' in data) || isValidDateString(data.createdAt));
+             (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
+             (!('updatedAt' in data) || isValidDateString(data.updatedAt));
     }
 
     function isValidSaving(data) {

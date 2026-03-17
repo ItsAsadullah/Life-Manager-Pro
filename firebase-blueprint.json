@@ -67,7 +67,8 @@
         "type": { "type": "string", "enum": ["borrowed", "lent"] },
         "dueDate": { "type": "string", "format": "date-time" },
         "status": { "type": "string", "enum": ["pending", "paid"] },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["personName", "amount", "type", "status", "createdAt"]
     },

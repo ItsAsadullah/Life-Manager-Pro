@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
-import { collection, query, onSnapshot, orderBy, addDoc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, X, Receipt, ArrowUpCircle, ArrowDownCircle, DollarSign } from 'lucide-react';
+import { Plus, Save, X, Receipt, ArrowUpCircle, ArrowDownCircle, DollarSign, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
@@ -14,6 +14,7 @@ export const Expenses: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [transactionToDelete, setTransactionToDelete] = useState<{id: string, type: string} | null>(null);
 
   useEffect(() => {
     if (location.state?.openAddModal) {
@@ -99,6 +100,22 @@ export const Expenses: React.FC = () => {
       setDescription('');
     } catch (error) {
       console.error('Error adding transaction:', error);
+    }
+  };
+
+  const handleDelete = async (id: string, type: string) => {
+    setTransactionToDelete({ id, type });
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !transactionToDelete) return;
+    try {
+      const collectionName = transactionToDelete.type === 'expense' ? 'expenses' : 'income';
+      await deleteDoc(doc(db, 'users', user.uid, collectionName, transactionToDelete.id));
+      setTransactionToDelete(null);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      alert('Failed to delete transaction.');
     }
   };
 
@@ -280,11 +297,12 @@ export const Expenses: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category/Source</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactions.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={t.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {t.date ? format(new Date(t.date), 'MMM d, yyyy') : ''}
                   </td>
@@ -306,11 +324,19 @@ export const Expenses: React.FC = () => {
                   }`}>
                     {t.type === 'expense' ? '-' : '+'}৳{t.amount.toLocaleString()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleDelete(t.id, t.type)}
+                      className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {transactions.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                     <p>No transactions found. Add your first entry!</p>
                   </td>
@@ -320,6 +346,31 @@ export const Expenses: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {transactionToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Transaction</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this transaction? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setTransactionToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

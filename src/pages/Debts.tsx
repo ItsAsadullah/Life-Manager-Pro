@@ -51,6 +51,8 @@ export const Debts: React.FC = () => {
   const [repaymentAmount, setRepaymentAmount] = useState('');
   const [repaymentDate, setRepaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [repaymentNote, setRepaymentNote] = useState('');
+  const [debtToDelete, setDebtToDelete] = useState<string | null>(null);
+  const [repaymentToDelete, setRepaymentToDelete] = useState<{debtId: string, repaymentId: string} | null>(null);
 
   // Form state
   const [personName, setPersonName] = useState('');
@@ -208,9 +210,22 @@ export const Debts: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!user || !window.confirm('Are you sure you want to delete this record?')) return;
+    setDebtToDelete(id);
+  };
+
+  const confirmDeleteDebt = async () => {
+    if (!user || !debtToDelete) return;
     try {
-      await deleteDoc(doc(db, 'users', user.uid, 'debts', id));
+      // Delete all subcollections (repayments) first
+      const repaymentsRef = collection(db, 'users', user.uid, 'debts', debtToDelete, 'repayments');
+      const repaymentsSnapshot = await getDocs(repaymentsRef);
+      
+      const deletePromises = repaymentsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      
+      // Then delete the main document
+      await deleteDoc(doc(db, 'users', user.uid, 'debts', debtToDelete));
+      setDebtToDelete(null);
     } catch (error) {
       console.error('Error deleting debt:', error);
       alert('Failed to delete record.');

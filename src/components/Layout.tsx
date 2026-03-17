@@ -107,9 +107,34 @@ export const Layout: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
           <Outlet />
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex justify-around items-center z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+          {navItems.slice(0, 5).map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `flex flex-col items-center p-2 rounded-lg transition-colors ${
+                  isActive ? 'text-indigo-600' : 'text-gray-500'
+                }`
+              }
+            >
+              <span className="mb-1">{item.icon}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="flex flex-col items-center p-2 text-gray-500"
+          >
+            <Menu size={20} className="mb-1" />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
+        </nav>
       </div>
     </div>
   );

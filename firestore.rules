@@ -164,6 +164,16 @@ service cloud.firestore {
         allow create: if isOwner(userId) && isValidDebt(request.resource.data);
         allow update: if isOwner(userId) && isValidDebt(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
         allow delete: if isOwner(userId);
+
+        match /repayments/{repaymentId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) && hasOnlyAllowedFields(['amount', 'date', 'note', 'createdAt']) &&
+                        isValidNumber(request.resource.data.amount, 0, 1000000000) &&
+                        isValidDateString(request.resource.data.date) &&
+                        (!('note' in request.resource.data) || isValidString(request.resource.data.note, 0, 500)) &&
+                        isValidDateString(request.resource.data.createdAt);
+          allow update, delete: if isOwner(userId);
+        }
       }
 
       match /savings/{savingId} {

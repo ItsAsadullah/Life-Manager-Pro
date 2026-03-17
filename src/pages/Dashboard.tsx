@@ -9,6 +9,7 @@ export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,18 +29,28 @@ export const Dashboard: React.FC = () => {
     const unsubscribeNotes = onSnapshot(qNotes, (snapshot) => {
       const nts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setNotes(nts);
+    });
+
+    const debtsRef = collection(db, 'users', user.uid, 'debts');
+    const qDebts = query(debtsRef, orderBy('createdAt', 'desc'));
+    const unsubscribeDebts = onSnapshot(qDebts, (snapshot) => {
+      const dbts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDebts(dbts);
       setLoading(false);
     });
 
     return () => {
       unsubscribeExpenses();
       unsubscribeNotes();
+      unsubscribeDebts();
     };
   }, [user]);
 
-  if (loading) return <div>Loading dashboard...</div>;
+  if (loading) return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
 
   const totalExpense = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const totalBorrowed = debts.filter(d => d.type === 'borrowed' && d.status === 'pending').reduce((sum, d) => sum + d.amount, 0);
+  const totalLent = debts.filter(d => d.type === 'lent' && d.status === 'pending').reduce((sum, d) => sum + d.amount, 0);
   
   // Group expenses by category for chart
   const categoryData = expenses.reduce((acc: any, exp) => {
@@ -53,72 +64,102 @@ export const Dashboard: React.FC = () => {
     value: categoryData[key]
   }));
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+    <div className="space-y-6 pb-10">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+        <div className="hidden md:block text-sm text-gray-500">
+          Welcome back, <span className="font-semibold text-indigo-600">{user?.displayName}</span>
+        </div>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
-          <p className="text-3xl font-bold text-gray-900">৳{totalExpense.toLocaleString()}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Expenses</h3>
+          <p className="text-2xl font-bold text-gray-900">৳{totalExpense.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Recent Notes</h3>
-          <p className="text-3xl font-bold text-gray-900">{notes.length}</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Borrowed</h3>
+          <p className="text-2xl font-bold text-red-600">৳{totalBorrowed.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Total Vouchers</h3>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Lent</h3>
+          <p className="text-2xl font-bold text-green-600">৳{totalLent.toLocaleString()}</p>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Recent Notes</h3>
+          <p className="text-2xl font-bold text-indigo-600">{notes.length}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Expense by Category</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Expense Analysis</h3>
           {chartData.length > 0 ? (
-            <div className="h-64">
+            <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    innerRadius={70}
+                    outerRadius={90}
+                    paddingAngle={8}
                     dataKey="value"
+                    stroke="none"
                   >
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip formatter={(value) => `৳${value}`} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    formatter={(value) => `৳${value}`} 
+                  />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="flex flex-wrap justify-center gap-4 mt-4">
+                {chartData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center text-xs text-gray-500">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                    {entry.name}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-10">No expenses yet.</p>
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <p>No expense data available yet.</p>
+            </div>
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Notes</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Latest Notes</h3>
           {notes.length > 0 ? (
             <div className="space-y-4">
               {notes.map(note => (
-                <div key={note.id} className="p-4 border border-gray-100 rounded-lg hover:bg-gray-50">
-                  <h4 className="font-medium text-gray-900">{note.title}</h4>
-                  <p className="text-sm text-gray-500 line-clamp-2 mt-1">{note.content}</p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {note.createdAt ? format(new Date(note.createdAt), 'MMM d, yyyy') : ''}
-                  </p>
+                <div key={note.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                  <h4 className="font-bold text-gray-900 text-sm">{note.title}</h4>
+                  <p className="text-xs text-gray-500 line-clamp-2 mt-1">{note.content}</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-[10px] text-gray-400">
+                      {note.createdAt ? format(new Date(note.createdAt), 'MMM d, yyyy') : ''}
+                    </span>
+                    {note.isVoiceNote && (
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">VOICE</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-10">No notes yet.</p>
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <p>No notes found.</p>
+            </div>
           )}
         </div>
       </div>

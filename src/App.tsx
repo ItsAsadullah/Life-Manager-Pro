@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -11,6 +12,7 @@ import { Debts } from './pages/Debts';
 import { Scanner } from './pages/Scanner';
 import { Chatbot } from './pages/Chatbot';
 import { ImageGen } from './pages/ImageGen';
+import { Settings } from './pages/Settings';
 import { Preloader } from './components/Preloader';
 import React, { useState, useEffect } from 'react';
 
@@ -55,6 +57,7 @@ const AppContent = () => {
           <Route path="scanner" element={<Scanner />} />
           <Route path="chatbot" element={<Chatbot />} />
           <Route path="image-gen" element={<ImageGen />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </Router>
@@ -64,7 +67,9 @@ const AppContent = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <SettingsProvider>
+        <AppContent />
+      </SettingsProvider>
     </AuthProvider>
   );
 }

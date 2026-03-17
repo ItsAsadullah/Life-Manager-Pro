@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useSettings } from '../contexts/SettingsContext';
 import { format } from 'date-fns';
 import { ShoppingCart, ArrowLeft, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -9,6 +10,7 @@ import { db } from '../lib/firebase';
 
 export const SharedMemoView: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const { t, currencySymbol } = useSettings();
   const [memo, setMemo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -203,8 +205,8 @@ export const SharedMemoView: React.FC = () => {
                     <tr key={idx}>
                       <td className="py-4 text-gray-900 font-medium">{item.name}</td>
                       <td className="py-4 text-right text-gray-600">{item.quantity} {item.unit}</td>
-                      <td className="py-4 text-right text-gray-600">৳{item.unitPrice}</td>
-                      <td className="py-4 text-right text-gray-900 font-bold">৳{item.total.toLocaleString()}</td>
+                      <td className="py-4 text-right text-gray-600">{currencySymbol}{item.unitPrice}</td>
+                      <td className="py-4 text-right text-gray-900 font-bold">{currencySymbol}{item.total.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -213,7 +215,7 @@ export const SharedMemoView: React.FC = () => {
 
             <div className="flex justify-between items-center bg-gray-50 p-6 rounded-xl border border-gray-100">
               <span className="text-lg font-bold text-gray-600 uppercase tracking-wider">Grand Total</span>
-              <span className="text-3xl font-bold text-indigo-600">৳{memo.totalAmount.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-indigo-600">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
             </div>
             
             <div className="mt-8 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">

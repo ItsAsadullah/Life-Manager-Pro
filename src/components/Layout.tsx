@@ -1,24 +1,30 @@
-import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins } from 'lucide-react';
-import { useState } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
+import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins, Settings as SettingsIcon, X } from 'lucide-react';
 import { QuickActionFAB } from './QuickActionFAB';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useSettings();
+  const location = useLocation();
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const navItems = [
-    { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { to: '/notes', icon: <StickyNote size={20} />, label: 'Notes' },
-    { to: '/market-memo', icon: <ShoppingCart size={20} />, label: 'Market Memo' },
-    { to: '/expenses', icon: <Receipt size={20} />, label: 'Expenses' },
-    { to: '/debts', icon: <HandCoins size={20} />, label: 'Debts' },
-    { to: '/scanner', icon: <ScanLine size={20} />, label: 'Voucher Scanner' },
-    { to: '/chatbot', icon: <Bot size={20} />, label: 'AI Chatbot' },
-    { to: '/image-gen', icon: <ImageIcon size={20} />, label: 'Image Gen' },
+    { to: '/', icon: <LayoutDashboard size={20} />, label: t('dashboard'), key: 'dashboard' },
+    { to: '/notes', icon: <StickyNote size={20} />, label: t('notes'), key: 'notes' },
+    { to: '/market-memo', icon: <ShoppingCart size={20} />, label: t('marketMemo'), key: 'marketMemo' },
+    { to: '/expenses', icon: <Receipt size={20} />, label: t('expenses'), key: 'expenses' },
+    { to: '/debts', icon: <HandCoins size={20} />, label: t('debts'), key: 'debts' },
+    { to: '/scanner', icon: <ScanLine size={20} />, label: t('scanner'), key: 'scanner' },
+    { to: '/chatbot', icon: <Bot size={20} />, label: t('chatbot'), key: 'chatbot' },
+    { to: '/image-gen', icon: <ImageIcon size={20} />, label: t('imageGen'), key: 'imageGen' },
+    { to: '/settings', icon: <SettingsIcon size={20} />, label: t('settings'), key: 'settings' },
   ];
+
+  const isDashboard = location.pathname === '/';
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans">
@@ -44,10 +50,7 @@ export const Layout: React.FC = () => {
                     }`
                   }
                 >
-                  <span className={`mr-3 transition-colors ${
-                    // We can't easily check isActive here without repeating the function, so we rely on parent text color
-                    ''
-                  }`}>{item.icon}</span>
+                  <span className="mr-3">{item.icon}</span>
                   {item.label}
                 </NavLink>
               </li>
@@ -67,52 +70,17 @@ export const Layout: React.FC = () => {
             className="flex items-center justify-center w-full px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors border border-red-100"
           >
             <LogOut size={18} className="mr-2" />
-            Logout
+            {t('logout')}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header */}
-        <header className="md:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+        {/* Mobile Header (No Hamburger) */}
+        <header className="md:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-center px-4">
           <h1 className="text-lg font-bold text-indigo-600">Life Manager Pro</h1>
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600">
-            <Menu size={24} />
-          </button>
         </header>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 z-50 shadow-lg">
-            <nav className="p-4">
-              <ul className="space-y-2">
-                {navItems.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center px-4 py-3 rounded-lg ${
-                          isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600'
-                        }`
-                      }
-                    >
-                      <span className="mr-3">{item.icon}</span>
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-                <li>
-                  <button onClick={logout} className="flex items-center w-full px-4 py-3 text-red-600 rounded-lg">
-                    <LogOut size={20} className="mr-3" />
-                    Logout
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        )}
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-gray-50/50">
           <div className="max-w-7xl mx-auto w-full">
@@ -120,7 +88,63 @@ export const Layout: React.FC = () => {
           </div>
         </main>
 
-        <QuickActionFAB />
+        {isDashboard && <QuickActionFAB />}
+
+        {/* More Menu Overlay */}
+        <AnimatePresence>
+          {isMoreMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMoreMenuOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 md:hidden"
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 z-[60] md:hidden shadow-2xl border-t border-gray-100"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">{t('more')}</h2>
+                  <button onClick={() => setIsMoreMenuOpen(false)} className="p-2 bg-gray-100 rounded-full text-gray-500">
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                  {navItems.slice(5).map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex flex-col items-center p-4 rounded-2xl transition-all ${
+                          isActive ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-600'
+                        }`
+                      }
+                    >
+                      <div className="mb-2">{item.icon}</div>
+                      <span className="text-[10px] font-bold text-center leading-tight">{item.label}</span>
+                    </NavLink>
+                  ))}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMoreMenuOpen(false);
+                    }}
+                    className="flex flex-col items-center p-4 rounded-2xl bg-red-50 text-red-600"
+                  >
+                    <div className="mb-2"><LogOut size={20} /></div>
+                    <span className="text-[10px] font-bold">{t('logout')}</span>
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Mobile Bottom Navigation */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex justify-around items-center z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
@@ -139,14 +163,15 @@ export const Layout: React.FC = () => {
             </NavLink>
           ))}
           <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="flex flex-col items-center p-2 text-gray-500"
+            onClick={() => setIsMoreMenuOpen(true)}
+            className={`flex flex-col items-center p-2 transition-colors ${isMoreMenuOpen ? 'text-indigo-600' : 'text-gray-500'}`}
           >
             <Menu size={20} className="mb-1" />
-            <span className="text-[10px] font-medium">More</span>
+            <span className="text-[10px] font-medium">{t('more')}</span>
           </button>
         </nav>
       </div>
     </div>
   );
 };
+

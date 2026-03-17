@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
+import { useSettings } from '../contexts/SettingsContext';
 import { Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export const Chatbot: React.FC = () => {
+  const { t } = useSettings();
   const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +58,7 @@ export const Chatbot: React.FC = () => {
       <div className="p-4 border-b border-gray-200 bg-indigo-50 flex items-center">
         <Bot className="text-indigo-600 mr-3" size={24} />
         <div>
-          <h2 className="text-lg font-bold text-gray-900">AI Assistant</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('chatbot')}</h2>
           <p className="text-sm text-gray-600">Powered by Gemini 3.1 Pro</p>
         </div>
       </div>
@@ -115,7 +117,7 @@ export const Chatbot: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything about your finances or notes..."
+            placeholder={t('askSomething')}
             className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             disabled={isLoading}
           />

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useLocation } from 'react-router-dom';
-import { collection, query, onSnapshot, orderBy, addDoc, where, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Plus, Save, X, Receipt, ArrowUpCircle, ArrowDownCircle, DollarSign, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -10,6 +11,7 @@ import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
 export const Expenses: React.FC = () => {
   const { user } = useAuth();
+  const { t, currencySymbol } = useSettings();
   const location = useLocation();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -22,7 +24,6 @@ export const Expenses: React.FC = () => {
       if (location.state.type) {
         setActiveTab(location.state.type);
       }
-      // Clear state to prevent re-opening on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -37,18 +38,16 @@ export const Expenses: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Listen to expenses
     const expensesRef = collection(db, 'users', user.uid, 'expenses');
     const unsubscribeExpenses = onSnapshot(query(expensesRef, orderBy('date', 'desc')), (snapshot) => {
       const exps = snapshot.docs.map(doc => ({ id: doc.id, type: 'expense', ...doc.data() }));
-      updateTransactions(exps, 'expense');
+      setAllExps(exps);
     });
 
-    // Listen to income
     const incomeRef = collection(db, 'users', user.uid, 'income');
     const unsubscribeIncome = onSnapshot(query(incomeRef, orderBy('date', 'desc')), (snapshot) => {
       const incs = snapshot.docs.map(doc => ({ id: doc.id, type: 'income', ...doc.data() }));
-      updateTransactions(incs, 'income');
+      setAllIncs(incs);
     });
 
     return () => {
@@ -59,11 +58,6 @@ export const Expenses: React.FC = () => {
 
   const [allExps, setAllExps] = useState<any[]>([]);
   const [allIncs, setAllIncs] = useState<any[]>([]);
-
-  const updateTransactions = (data: any[], type: 'expense' | 'income') => {
-    if (type === 'expense') setAllExps(data);
-    else setAllIncs(data);
-  };
 
   useEffect(() => {
     const combined = [...allExps, ...allIncs].sort((a, b) => 
@@ -103,10 +97,6 @@ export const Expenses: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, type: string) => {
-    setTransactionToDelete({ id, type });
-  };
-
   const confirmDelete = async () => {
     if (!user || !transactionToDelete) return;
     try {
@@ -115,7 +105,6 @@ export const Expenses: React.FC = () => {
       setTransactionToDelete(null);
     } catch (error) {
       console.error('Error deleting transaction:', error);
-      alert('Failed to delete transaction.');
     }
   };
 
@@ -130,7 +119,7 @@ export const Expenses: React.FC = () => {
     <div className="space-y-6 pb-10">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Transactions</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('expenses')}</h2>
           <p className="text-gray-500 text-sm">Manage your income and expenses</p>
         </div>
         <button
@@ -148,8 +137,8 @@ export const Expenses: React.FC = () => {
             <ArrowUpCircle className="text-emerald-600" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Income</h3>
-            <p className="text-2xl font-bold text-emerald-600">৳{totalIncome.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('monthlyIncome')}</h3>
+            <p className="text-2xl font-bold text-emerald-600">{currencySymbol}{totalIncome.toLocaleString()}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-red-100 flex items-center">
@@ -157,8 +146,8 @@ export const Expenses: React.FC = () => {
             <ArrowDownCircle className="text-red-600" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Expenses</h3>
-            <p className="text-2xl font-bold text-red-600">৳{totalExpense.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('monthlyExpense')}</h3>
+            <p className="text-2xl font-bold text-red-600">{currencySymbol}{totalExpense.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -197,7 +186,7 @@ export const Expenses: React.FC = () => {
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount (৳)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount ({currencySymbol})</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
                     <SwipeableNumberInput
@@ -279,7 +268,7 @@ export const Expenses: React.FC = () => {
                 } disabled:opacity-50`}
               >
                 <Save size={20} className="mr-2" />
-                Save {activeTab === 'expense' ? 'Expense' : 'Income'}
+                {t('save')} {activeTab === 'expense' ? 'Expense' : 'Income'}
               </button>
             </form>
           </div>
@@ -322,11 +311,11 @@ export const Expenses: React.FC = () => {
                   <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${
                     t.type === 'expense' ? 'text-red-600' : 'text-emerald-600'
                   }`}>
-                    {t.type === 'expense' ? '-' : '+'}৳{t.amount.toLocaleString()}
+                    {t.type === 'expense' ? '-' : '+'}{currencySymbol}{t.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => handleDelete(t.id, t.type)}
+                      onClick={() => setTransactionToDelete({ id: t.id, type: t.type })}
                       className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={18} />
@@ -338,7 +327,7 @@ export const Expenses: React.FC = () => {
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                     <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                    <p>No transactions found. Add your first entry!</p>
+                    <p>{t('noTransactions')}</p>
                   </td>
                 </tr>
               )}
@@ -351,20 +340,20 @@ export const Expenses: React.FC = () => {
       {transactionToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Transaction</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this transaction? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('delete')}</h3>
+            <p className="text-gray-600 mb-6">{t('confirmDelete')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setTransactionToDelete(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>

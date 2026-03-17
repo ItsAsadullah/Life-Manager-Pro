@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, DollarSign, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { useSettings } from '../contexts/SettingsContext';
 
 export const QuickActionFAB: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const navigate = useNavigate();
+  const { t } = useSettings();
 
   const actions = [
-    { icon: <ArrowDownCircle size={20} />, label: 'আয় (Income)', color: 'bg-emerald-500', path: '/expenses', state: { openAddModal: true, type: 'income' } },
-    { icon: <ArrowUpCircle size={20} />, label: 'খরচ (Expense)', color: 'bg-rose-500', path: '/expenses', state: { openAddModal: true, type: 'expense' } },
-    { icon: <HandCoins size={20} />, label: 'ধার/লোন (Debt)', color: 'bg-amber-500', path: '/debts', state: { openAddModal: true } },
-    { icon: <ShoppingCart size={20} />, label: 'বাজার লিস্ট (Market)', color: 'bg-blue-500', path: '/market-memo', state: { openAddModal: true } },
-    { icon: <StickyNote size={20} />, label: 'নোটস (Notes)', color: 'bg-purple-500', path: '/notes', state: { openAddModal: true } },
-    { icon: <CalcIcon size={20} />, label: 'ক্যালকুলেটর', color: 'bg-gray-600', action: () => setShowCalculator(true) },
+    { icon: <ArrowDownCircle size={20} />, label: t('addIncome'), color: 'bg-emerald-500', path: '/expenses', state: { openAddModal: true, type: 'income' } },
+    { icon: <ArrowUpCircle size={20} />, label: t('addExpense'), color: 'bg-rose-500', path: '/expenses', state: { openAddModal: true, type: 'expense' } },
+    { icon: <HandCoins size={20} />, label: t('addDebt'), color: 'bg-amber-500', path: '/debts', state: { openAddModal: true } },
+    { icon: <ShoppingCart size={20} />, label: t('addMarket'), color: 'bg-blue-500', path: '/market-memo', state: { openAddModal: true } },
+    { icon: <StickyNote size={20} />, label: t('addNote'), color: 'bg-purple-500', path: '/notes', state: { openAddModal: true } },
+    { icon: <CalcIcon size={20} />, label: t('calculator'), color: 'bg-gray-600', action: () => setShowCalculator(true) },
   ];
 
   const handleAction = (action: any) => {
@@ -106,29 +108,62 @@ export const QuickActionFAB: React.FC = () => {
 const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
+  const [prevValue, setPrevValue] = useState<number | null>(null);
+  const [operator, setOperator] = useState<string | null>(null);
+  const [waitingForOperand, setWaitingForOperand] = useState(false);
 
   const handleNumber = (num: string) => {
-    setDisplay(display === '0' ? num : display + num);
+    if (waitingForOperand) {
+      setDisplay(num);
+      setWaitingForOperand(false);
+    } else {
+      setDisplay(display === '0' ? num : display + num);
+    }
   };
 
-  const handleOperator = (op: string) => {
-    setEquation(display + ' ' + op + ' ');
-    setDisplay('0');
+  const handleOperator = (nextOperator: string) => {
+    const inputValue = parseFloat(display);
+
+    if (prevValue === null) {
+      setPrevValue(inputValue);
+    } else if (operator) {
+      const currentValue = prevValue || 0;
+      const newValue = performCalculation[operator](currentValue, inputValue);
+      setPrevValue(newValue);
+      setDisplay(String(newValue));
+    }
+
+    setWaitingForOperand(true);
+    setOperator(nextOperator);
+    setEquation(`${prevValue === null ? inputValue : prevValue} ${nextOperator}`);
+  };
+
+  const performCalculation: Record<string, (a: number, b: number) => number> = {
+    '/': (a, b) => a / b,
+    '*': (a, b) => a * b,
+    '+': (a, b) => a + b,
+    '-': (a, b) => a - b,
   };
 
   const calculate = () => {
-    try {
-      const result = eval(equation + display);
+    const inputValue = parseFloat(display);
+
+    if (operator && prevValue !== null) {
+      const result = performCalculation[operator](prevValue, inputValue);
       setDisplay(String(result));
+      setPrevValue(null);
+      setOperator(null);
       setEquation('');
-    } catch (e) {
-      setDisplay('Error');
+      setWaitingForOperand(true);
     }
   };
 
   const clear = () => {
     setDisplay('0');
     setEquation('');
+    setPrevValue(null);
+    setOperator(null);
+    setWaitingForOperand(false);
   };
 
   const buttons = [

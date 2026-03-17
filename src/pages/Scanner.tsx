@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
@@ -9,6 +10,7 @@ import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
 export const Scanner: React.FC = () => {
   const { user } = useAuth();
+  const { t, currencySymbol } = useSettings();
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -96,7 +98,7 @@ export const Scanner: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Voucher Scanner</h2>
+      <h2 className="text-2xl font-bold text-gray-900">{t('scanner')}</h2>
       <p className="text-gray-600">Upload a receipt to automatically extract text and save it as an expense.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -150,7 +152,7 @@ export const Scanner: React.FC = () => {
             
             <div className="flex-1 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount (৳)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('totalAmount')} ({currencySymbol})</label>
                 <SwipeableNumberInput
                   value={String(totalAmount)}
                   onChange={(val) => setTotalAmount(val ? Number(val) : '')}

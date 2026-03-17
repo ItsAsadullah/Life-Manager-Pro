@@ -42,11 +42,16 @@ service cloud.firestore {
     }
 
     function isValidNote(data) {
-      return hasOnlyAllowedFields(['title', 'content', 'category', 'isVoiceNote', 'voiceURL', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['title', 'content', 'type', 'checklist', 'color', 'category', 'isVoiceNote', 'isPinned', 'isArchived', 'voiceURL', 'createdAt', 'updatedAt']) &&
              isValidString(data.title, 0, 200) &&
-             isValidString(data.content, 0, 50000) &&
+             (!('content' in data) || isValidString(data.content, 0, 50000)) &&
+             (!('type' in data) || data.type in ['text', 'checklist']) &&
+             (!('checklist' in data) || data.checklist is list) &&
+             (!('color' in data) || isValidString(data.color, 0, 50)) &&
              (!('category' in data) || isValidString(data.category, 0, 50)) &&
              (!('isVoiceNote' in data) || data.isVoiceNote is bool) &&
+             (!('isPinned' in data) || data.isPinned is bool) &&
+             (!('isArchived' in data) || data.isArchived is bool) &&
              (!('voiceURL' in data) || isValidString(data.voiceURL, 0, 1000)) &&
              (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
              (!('updatedAt' in data) || isValidDateString(data.updatedAt));

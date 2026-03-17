@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, X, Trash2, Edit2, CheckCircle, Clock, User, Phone, DollarSign, Calendar, History, ArrowDownCircle, ArrowUpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Save, X, Trash2, Edit2, CheckCircle, Clock, User, Phone, DollarSign, Calendar, History, ArrowDownCircle, ArrowUpCircle, ChevronDown, ChevronUp, HandCoins } from 'lucide-react';
 import { format } from 'date-fns';
 import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
@@ -32,6 +33,7 @@ interface Debt {
 
 export const Debts: React.FC = () => {
   const { user } = useAuth();
+  const { t, currencySymbol } = useSettings();
   const location = useLocation();
   const [debts, setDebts] = useState<Debt[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -265,7 +267,7 @@ export const Debts: React.FC = () => {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Debt Management</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('debts')}</h2>
           <p className="text-gray-600">Track money you owe or are owed</p>
         </div>
         <button
@@ -283,8 +285,8 @@ export const Debts: React.FC = () => {
             <ArrowDownCircle className="text-red-600" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Borrowed</h3>
-            <p className="text-2xl font-bold text-red-600">৳{totalBorrowed.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('borrowed')}</h3>
+            <p className="text-2xl font-bold text-red-600">{currencySymbol}{totalBorrowed.toLocaleString()}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-green-100 flex items-center">
@@ -292,8 +294,8 @@ export const Debts: React.FC = () => {
             <ArrowUpCircle className="text-green-600" size={24} />
           </div>
           <div>
-            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Lent</h3>
-            <p className="text-2xl font-bold text-green-600">৳{totalLent.toLocaleString()}</p>
+            <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{t('lent')}</h3>
+            <p className="text-2xl font-bold text-green-600">{currencySymbol}{totalLent.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -360,7 +362,7 @@ export const Debts: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (৳)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount ({currencySymbol})</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   <SwipeableNumberInput
@@ -445,11 +447,11 @@ export const Debts: React.FC = () => {
                       <div className={`text-sm font-bold ${
                         debt.type === 'borrowed' ? 'text-red-600' : 'text-green-600'
                       }`}>
-                        ৳{debt.amount.toLocaleString()}
+                        {currencySymbol}{debt.amount.toLocaleString()}
                       </div>
                       {totalPaid > 0 && (
                         <div className="text-[10px] text-gray-400">
-                          Paid: ৳{totalPaid.toLocaleString()} | Rem: ৳{remaining.toLocaleString()}
+                          Paid: {currencySymbol}{totalPaid.toLocaleString()} | Rem: {currencySymbol}{remaining.toLocaleString()}
                         </div>
                       )}
                     </td>
@@ -562,7 +564,7 @@ export const Debts: React.FC = () => {
                                     <DollarSign size={14} className="text-indigo-600" />
                                   </div>
                                   <div>
-                                    <div className="text-sm font-medium text-gray-900">৳{repayment.amount.toLocaleString()}</div>
+                                    <div className="text-sm font-medium text-gray-900">{currencySymbol}{repayment.amount.toLocaleString()}</div>
                                     <div className="text-xs text-gray-400">{format(new Date(repayment.date), 'MMM d, yyyy')} {repayment.note && `• ${repayment.note}`}</div>
                                   </div>
                                 </div>
@@ -622,12 +624,12 @@ export const Debts: React.FC = () => {
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase font-medium">Total Amount</p>
                     <p className={`text-lg font-bold ${debt.type === 'borrowed' ? 'text-red-600' : 'text-green-600'}`}>
-                      ৳{debt.amount.toLocaleString()}
+                      {currencySymbol}{debt.amount.toLocaleString()}
                     </p>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase font-medium">Remaining</p>
-                    <p className="text-lg font-bold text-gray-900">৳{remaining.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-gray-900">{currencySymbol}{remaining.toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -726,7 +728,7 @@ export const Debts: React.FC = () => {
                     {debt.repayments?.map(repayment => (
                       <div key={repayment.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100">
                         <div>
-                          <p className="text-sm font-bold text-gray-900">৳{repayment.amount.toLocaleString()}</p>
+                          <p className="text-sm font-bold text-gray-900">{currencySymbol}{repayment.amount.toLocaleString()}</p>
                           <p className="text-[10px] text-gray-400">{format(new Date(repayment.date), 'MMM d, yyyy')} {repayment.note && `• ${repayment.note}`}</p>
                         </div>
                         <button 
@@ -761,20 +763,20 @@ export const Debts: React.FC = () => {
       {debtToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Record</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('delete')}</h3>
+            <p className="text-gray-600 mb-6">{t('confirmDelete')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDebtToDelete(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmDeleteDebt}
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -786,20 +788,20 @@ export const Debts: React.FC = () => {
       {repaymentToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Payment</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this payment record? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('delete')}</h3>
+            <p className="text-gray-600 mb-6">{t('confirmDelete')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setRepaymentToDelete(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmDeleteRepayment}
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -810,5 +812,4 @@ export const Debts: React.FC = () => {
   );
 };
 
-// Add missing icon import
-import { HandCoins } from 'lucide-react';
+// Remove duplicate icon import at the bottom

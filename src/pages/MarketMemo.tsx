@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -23,6 +24,7 @@ interface MemoItem {
 
 export const MarketMemo: React.FC = () => {
   const { user } = useAuth();
+  const { t, currencySymbol } = useSettings();
   const location = useLocation();
   const [memos, setMemos] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -486,7 +488,7 @@ export const MarketMemo: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Market Memo</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('marketMemo')}</h2>
           <p className="text-gray-600">Create digital bazaar lists and track costs</p>
         </div>
         <button
@@ -494,7 +496,7 @@ export const MarketMemo: React.FC = () => {
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
           <Plus size={20} className="mr-2" />
-          New Memo
+          {t('addMemo')}
         </button>
       </div>
 
@@ -595,7 +597,7 @@ export const MarketMemo: React.FC = () => {
                     </div>
                     <div>
                       <SwipeableNumberInput
-                        placeholder="Unit Price (৳)"
+                        placeholder={`${t('unitPrice')} (${currencySymbol})`}
                         required
                         value={itemUnitPrice}
                         onChange={setItemUnitPrice}
@@ -763,7 +765,7 @@ export const MarketMemo: React.FC = () => {
                 {memo.items.slice(0, 3).map((item: any, idx: number) => (
                   <li key={idx} className="flex justify-between text-sm">
                     <span className="text-gray-600">{item.name} <span className="text-xs text-gray-400">({item.quantity}{item.unit})</span></span>
-                    <span className="font-medium text-gray-900">৳{item.total}</span>
+                    <span className="font-medium text-gray-900">{currencySymbol}{item.total}</span>
                   </li>
                 ))}
                 {memo.items.length > 3 && (
@@ -776,11 +778,11 @@ export const MarketMemo: React.FC = () => {
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-500">Purchased</span>
-                  <span className="text-green-600 font-bold">৳{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
+                  <span className="text-green-600 font-bold">{currencySymbol}{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-500">Remaining</span>
-                  <span className="text-red-600 font-bold">৳{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
+                  <span className="text-red-600 font-bold">{currencySymbol}{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
                 </div>
                 <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                   <div 
@@ -791,7 +793,7 @@ export const MarketMemo: React.FC = () => {
               </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm font-medium text-gray-500">Total Amount</span>
-                <span className="text-lg font-bold text-indigo-600">৳{memo.totalAmount.toLocaleString()}</span>
+                <span className="text-lg font-bold text-indigo-600">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
               </div>
               
               {memo.expenseId ? (
@@ -832,8 +834,8 @@ export const MarketMemo: React.FC = () => {
                     <tr key={idx} className="border-b border-gray-100">
                       <td className="py-3 text-gray-900 font-medium">{item.name}</td>
                       <td className="py-3 text-right text-gray-600">{item.quantity} {item.unit}</td>
-                      <td className="py-3 text-right text-gray-600">৳{item.unitPrice}</td>
-                      <td className="py-3 text-right text-gray-900 font-bold">৳{item.total}</td>
+                      <td className="py-3 text-right text-gray-600">{currencySymbol}{item.unitPrice}</td>
+                      <td className="py-3 text-right text-gray-900 font-bold">{currencySymbol}{item.total}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -841,7 +843,7 @@ export const MarketMemo: React.FC = () => {
               
               <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
                 <span className="text-xl font-bold text-indigo-900">Grand Total</span>
-                <span className="text-2xl font-bold text-indigo-700">৳{memo.totalAmount.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-indigo-700">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
               </div>
 
               <div className="mt-8 pt-6 border-t border-gray-100 text-center text-xs text-gray-400">

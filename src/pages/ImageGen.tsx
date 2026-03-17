@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
+import { useSettings } from '../contexts/SettingsContext';
 import { Image as ImageIcon, Loader2, Download } from 'lucide-react';
 
 export const ImageGen: React.FC = () => {
+  const { t } = useSettings();
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState<'1K' | '2K' | '4K'>('1K');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -60,7 +62,7 @@ export const ImageGen: React.FC = () => {
           <ImageIcon size={24} />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">AI Image Generator</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('imageGen')}</h2>
           <p className="text-gray-600">Create stunning images using Nano Banana Pro</p>
         </div>
       </div>
@@ -72,7 +74,7 @@ export const ImageGen: React.FC = () => {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="A futuristic city with flying cars at sunset..."
+              placeholder={t('askSomething')}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
             />

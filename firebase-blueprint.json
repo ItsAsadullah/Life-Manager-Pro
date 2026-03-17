@@ -15,18 +15,33 @@
     },
     "Note": {
       "title": "Note",
-      "description": "A text or voice note",
+      "description": "A text or checklist note",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
         "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "checklist"] },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "checked": { "type": "boolean" }
+            }
+          }
+        },
+        "color": { "type": "string" },
         "category": { "type": "string" },
         "isVoiceNote": { "type": "boolean" },
+        "isPinned": { "type": "boolean" },
+        "isArchived": { "type": "boolean" },
         "voiceURL": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "content", "createdAt"]
+      "required": ["title", "createdAt"]
     },
     "Expense": {
       "title": "Expense",

@@ -799,7 +799,7 @@ export const MarketMemo: React.FC = () => {
                   className="w-full flex justify-center items-center px-4 py-2 bg-gray-50 text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
                 >
                   <Receipt size={16} className="mr-2" />
-                  Convert to Expense
+                  {t('convertToExpense')}
                 </button>
               )}
             </div>
@@ -807,25 +807,25 @@ export const MarketMemo: React.FC = () => {
             {/* Hidden Capture Div for Image/PDF */}
             <div id={`memo-capture-${memo.id}`} className="absolute left-[-9999px] top-[-9999px] bg-white p-8 w-[600px] font-sans">
               <div className="border-b-2 border-indigo-600 pb-4 mb-6">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">🛒 Market Memo</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">🛒 {t('marketMemoTitle')}</h2>
                 <h3 className="text-xl text-gray-700">{memo.title}</h3>
-                {memo.createdAt && <p className="text-gray-500 mt-2">Date: {format(new Date(memo.createdAt), 'MMMM d, yyyy')}</p>}
+                {memo.createdAt && <p className="text-gray-500 mt-2">{t('date')}: {format(new Date(memo.createdAt), 'MMMM d, yyyy')}</p>}
               </div>
               
               <table className="w-full mb-6">
                 <thead>
                   <tr className="border-b border-gray-300 text-left">
-                    <th className="py-2 text-gray-600">Item</th>
-                    <th className="py-2 text-right text-gray-600">Qty</th>
-                    <th className="py-2 text-right text-gray-600">Price</th>
-                    <th className="py-2 text-right text-gray-600">Total</th>
+                    <th className="py-2 text-gray-600">{t('item')}</th>
+                    <th className="py-2 text-right text-gray-600">{t('qty')}</th>
+                    <th className="py-2 text-right text-gray-600">{t('price')}</th>
+                    <th className="py-2 text-right text-gray-600">{t('total')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {memo.items.map((item: any, idx: number) => (
                     <tr key={idx} className="border-b border-gray-100">
                       <td className="py-3 text-gray-900 font-medium">{item.name}</td>
-                      <td className="py-3 text-right text-gray-600">{item.quantity} {item.unit}</td>
+                      <td className="py-3 text-right text-gray-600">{item.quantity} {t(item.unit)}</td>
                       <td className="py-3 text-right text-gray-600">{currencySymbol}{item.unitPrice}</td>
                       <td className="py-3 text-right text-gray-900 font-bold">{currencySymbol}{item.total}</td>
                     </tr>
@@ -834,14 +834,14 @@ export const MarketMemo: React.FC = () => {
               </table>
               
               <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-lg">
-                <span className="text-xl font-bold text-indigo-900">Grand Total</span>
+                <span className="text-xl font-bold text-indigo-900">{t('grandTotal')}</span>
                 <span className="text-2xl font-bold text-indigo-700">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
               </div>
 
               <div className="mt-8 pt-6 border-t border-gray-100 text-center text-xs text-gray-400">
-                <p className="font-bold text-gray-500 mb-1">Developed by: Asadullah Al Galib</p>
+                <p className="font-bold text-gray-500 mb-1">{t('developedBy')}: Asadullah Al Galib</p>
                 <p className="mb-2">B.Sc in CSE, 01911777694</p>
-                <p>Created with Hisab Nikash App</p>
+                <p>{t('createdWith')}</p>
               </div>
             </div>
           </div>
@@ -849,7 +849,7 @@ export const MarketMemo: React.FC = () => {
         {memos.length === 0 && !isAdding && (
           <div className="col-span-full text-center py-12 text-gray-500">
             <ShoppingCart className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-            <p>No market memos found. Create one for your next shopping trip!</p>
+            <p>{t('noMemosFound')}</p>
           </div>
         )}
       </div>
@@ -864,24 +864,24 @@ export const MarketMemo: React.FC = () => {
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Share Memo</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">{t('shareMemo')}</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => handleShareText(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
                 <FileText size={24} className="mb-2" />
-                <span className="text-sm font-medium">Text</span>
+                <span className="text-sm font-medium">{t('text')}</span>
               </button>
               <button onClick={() => handleShareImage(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
                 <ImageIcon size={24} className="mb-2" />
-                <span className="text-sm font-medium">Image</span>
+                <span className="text-sm font-medium">{t('image')}</span>
               </button>
               <button onClick={() => handleSharePDF(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
                 <FileText size={24} className="mb-2" />
-                <span className="text-sm font-medium">PDF</span>
+                <span className="text-sm font-medium">{t('pdf')}</span>
               </button>
               <button onClick={() => handleShareLink(sharingMemo)} className="flex flex-col items-center justify-center p-4 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors border border-gray-100">
                 <LinkIcon size={24} className="mb-2" />
-                <span className="text-sm font-medium">Link</span>
+                <span className="text-sm font-medium">{t('link')}</span>
               </button>
             </div>
           </div>
@@ -902,7 +902,7 @@ export const MarketMemo: React.FC = () => {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Success!</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('success')}</h3>
             <p className="text-gray-600 text-center">{successMessage}</p>
           </div>
         </div>,
@@ -913,20 +913,20 @@ export const MarketMemo: React.FC = () => {
       {itemToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Item</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('deleteItem')}</h3>
+            <p className="text-gray-600 mb-6">{t('deleteItemConfirm')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setItemToDelete(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmRemoveItem}
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -938,20 +938,20 @@ export const MarketMemo: React.FC = () => {
       {memoToDelete && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Memo</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to delete this entire memo? This action cannot be undone.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('deleteMemo')}</h3>
+            <p className="text-gray-600 mb-6">{t('deleteMemoConfirm')}</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setMemoToDelete(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={confirmDeleteMemo}
                 className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
               >
-                Delete
+                {t('delete')}
               </button>
             </div>
           </div>

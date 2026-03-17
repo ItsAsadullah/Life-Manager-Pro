@@ -161,16 +161,16 @@ export const SharedMemoView: React.FC = () => {
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium">
             <ArrowLeft size={20} className="mr-2" />
-            Back to App
+            {t('backToApp')}
           </Link>
           <div className="flex gap-2">
             <button onClick={handleDownloadImage} className="flex items-center px-4 py-2 bg-white text-gray-700 rounded-lg border border-gray-200 hover:bg-gray-50 shadow-sm text-sm font-medium transition-colors">
               <ImageIcon size={16} className="mr-2" />
-              Image
+              {t('image')}
             </button>
             <button onClick={handleDownloadPDF} className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm text-sm font-medium transition-colors">
               <FileText size={16} className="mr-2" />
-              PDF
+              {t('pdf')}
             </button>
           </div>
         </div>
@@ -179,7 +179,7 @@ export const SharedMemoView: React.FC = () => {
           <div className="bg-indigo-600 p-8 text-white">
             <div className="flex items-center gap-3 mb-2">
               <ShoppingCart size={32} className="text-indigo-200" />
-              <h1 className="text-3xl font-bold">Market Memo</h1>
+              <h1 className="text-3xl font-bold">{t('marketMemoTitle')}</h1>
             </div>
             <h2 className="text-xl text-indigo-100">{memo.title}</h2>
             {memo.createdAt && (
@@ -194,17 +194,17 @@ export const SharedMemoView: React.FC = () => {
               <table className="w-full mb-8">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="py-3 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Item</th>
-                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">Qty</th>
-                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                    <th className="py-3 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">{t('item')}</th>
+                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">{t('qty')}</th>
+                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">{t('price')}</th>
+                    <th className="py-3 text-right text-sm font-semibold text-gray-600 uppercase tracking-wider">{t('total')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {memo.items.map((item: any, idx: number) => (
                     <tr key={idx}>
                       <td className="py-4 text-gray-900 font-medium">{item.name}</td>
-                      <td className="py-4 text-right text-gray-600">{item.quantity} {item.unit}</td>
+                      <td className="py-4 text-right text-gray-600">{item.quantity} {t(item.unit)}</td>
                       <td className="py-4 text-right text-gray-600">{currencySymbol}{item.unitPrice}</td>
                       <td className="py-4 text-right text-gray-900 font-bold">{currencySymbol}{item.total.toLocaleString()}</td>
                     </tr>
@@ -214,14 +214,14 @@ export const SharedMemoView: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center bg-gray-50 p-6 rounded-xl border border-gray-100">
-              <span className="text-lg font-bold text-gray-600 uppercase tracking-wider">Grand Total</span>
+              <span className="text-lg font-bold text-gray-600 uppercase tracking-wider">{t('grandTotal')}</span>
               <span className="text-3xl font-bold text-indigo-600">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
             </div>
             
             <div className="mt-8 pt-8 border-t border-gray-100 text-center text-sm text-gray-400">
-              <p className="font-bold text-gray-500 mb-1">Developed by: Asadullah Al Galib</p>
+              <p className="font-bold text-gray-500 mb-1">{t('developedBy')}: Asadullah Al Galib</p>
               <p className="mb-2">B.Sc in CSE, 01911777694</p>
-              <p>Created with Hisab Nikash App</p>
+              <p>{t('createdWith')}</p>
             </div>
           </div>
         </div>

@@ -112,8 +112,8 @@ export const Expenses: React.FC = () => {
   const incomeSources = ['salary', 'freelance', 'business', 'gift', 'investment', 'other'];
   const paymentMethods = ['cash', 'bkash', 'nagad', 'card', 'bankTransfer'];
 
-  const totalIncome = allIncs.reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = allExps.reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = allIncs.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpense = allExps.reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <div className="space-y-6 pb-10">
@@ -290,32 +290,32 @@ export const Expenses: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((t) => (
-                <tr key={t.id} className="hover:bg-gray-50 transition-colors group">
+              {transactions.map((transaction) => (
+                <tr key={transaction.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {t.date ? format(new Date(t.date), 'MMM d, yyyy') : ''}
+                    {transaction.date ? format(new Date(transaction.date), 'MMM d, yyyy') : ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-[10px] leading-5 font-bold uppercase rounded-full ${
-                      t.type === 'expense' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                      transaction.type === 'expense' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
                     }`}>
-                      {t.type === 'expense' ? t('expense') : t('income')}
+                      {transaction.type === 'expense' ? t('expense') : t('income')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {t.type === 'expense' ? t(t.category) : t(t.source)}
+                    {transaction.type === 'expense' ? t(transaction.category) : t(transaction.source)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {t.description || '-'}
+                    {transaction.description || '-'}
                   </td>
                   <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold text-right ${
-                    t.type === 'expense' ? 'text-red-600' : 'text-emerald-600'
+                    transaction.type === 'expense' ? 'text-red-600' : 'text-emerald-600'
                   }`}>
-                    {t.type === 'expense' ? '-' : '+'}{currencySymbol}{t.amount.toLocaleString()}
+                    {transaction.type === 'expense' ? '-' : '+'}{currencySymbol}{transaction.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => setTransactionToDelete({ id: t.id, type: t.type })}
+                      onClick={() => setTransactionToDelete({ id: transaction.id, type: transaction.type })}
                       className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={18} />

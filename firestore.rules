@@ -111,9 +111,26 @@ service cloud.firestore {
              (!('expenseId' in data) || isValidString(data.expenseId, 1, 100));
     }
 
+    function isValidSharedMemo(data) {
+      return hasOnlyAllowedFields(['title', 'items', 'totalAmount', 'createdAt', 'sharedBy', 'sharedAt']) &&
+             isValidString(data.title, 1, 200) &&
+             data.items is list &&
+             data.items.size() <= 100 &&
+             isValidNumber(data.totalAmount, 0, 1000000000) &&
+             (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
+             isValidString(data.sharedBy, 1, 100) &&
+             isValidDateString(data.sharedAt);
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
+    match /sharedMemos/{memoId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidSharedMemo(request.resource.data) && request.resource.data.sharedBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == userId;

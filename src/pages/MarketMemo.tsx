@@ -199,19 +199,22 @@ export const MarketMemo: React.FC = () => {
     const element = document.getElementById(`memo-capture-${memo.id}`);
     if (!element) return;
     
+    // Temporarily move on-screen for accurate capture
+    const originalPosition = element.style.position;
+    const originalLeft = element.style.left;
+    const originalTop = element.style.top;
+    const originalZIndex = element.style.zIndex;
+    
+    element.style.position = 'absolute';
+    element.style.left = '0';
+    element.style.top = '0';
+    element.style.zIndex = '-1000';
+    
     try {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById(`memo-capture-${memo.id}`);
-          if (clonedElement) {
-            clonedElement.style.position = 'static';
-            clonedElement.style.left = 'auto';
-            clonedElement.style.top = 'auto';
-          }
-        }
+        backgroundColor: '#ffffff'
       });
       const dataUrl = canvas.toDataURL('image/png');
       
@@ -222,7 +225,13 @@ export const MarketMemo: React.FC = () => {
       setSuccessMessage('Image downloaded!');
     } catch (err) {
       console.error('Failed to generate image', err);
+      alert('Failed to generate image. Please try again.');
     } finally {
+      // Restore original position
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
+      element.style.top = originalTop;
+      element.style.zIndex = originalZIndex;
       setSharingMemo(null);
     }
   };
@@ -231,19 +240,22 @@ export const MarketMemo: React.FC = () => {
     const element = document.getElementById(`memo-capture-${memo.id}`);
     if (!element) return;
     
+    // Temporarily move on-screen for accurate capture
+    const originalPosition = element.style.position;
+    const originalLeft = element.style.left;
+    const originalTop = element.style.top;
+    const originalZIndex = element.style.zIndex;
+    
+    element.style.position = 'absolute';
+    element.style.left = '0';
+    element.style.top = '0';
+    element.style.zIndex = '-1000';
+    
     try {
       const canvas = await html2canvas(element, { 
         scale: 2, 
         useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById(`memo-capture-${memo.id}`);
-          if (clonedElement) {
-            clonedElement.style.position = 'static';
-            clonedElement.style.left = 'auto';
-            clonedElement.style.top = 'auto';
-          }
-        }
+        backgroundColor: '#ffffff'
       });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -256,44 +268,76 @@ export const MarketMemo: React.FC = () => {
       setSuccessMessage('PDF downloaded!');
     } catch (err) {
       console.error('Failed to generate PDF', err);
+      alert('Failed to generate PDF. Please try again.');
     } finally {
+      // Restore original position
+      element.style.position = originalPosition;
+      element.style.left = originalLeft;
+      element.style.top = originalTop;
+      element.style.zIndex = originalZIndex;
       setSharingMemo(null);
     }
   };
 
-  const handleShareLink = (memo: any) => {
-    const data = {
-      t: memo.title,
-      i: memo.items.map((item: any) => ({
-        n: item.name,
-        q: item.quantity,
-        u: item.unit,
-        p: item.unitPrice,
-        t: item.total
-      })),
-      ta: memo.totalAmount,
-      d: memo.createdAt
-    };
+  const handleShareLink = async (memo: any) => {
+    if (!user) return;
     
-    const utf8Bytes = new TextEncoder().encode(JSON.stringify(data));
-    const binString = Array.from(utf8Bytes, (byte) => String.fromCharCode(byte)).join('');
-    const base64 = btoa(binString);
-    
-    const url = `${window.location.origin}/shared-memo?data=${base64}`;
-    
-    if (navigator.share) {
-      navigator.share({
+    let url = '';
+    try {
+      // Save to sharedMemos collection to keep the link short and clean
+      const sharedMemoRef = doc(collection(db, 'sharedMemos'));
+      await setDoc(sharedMemoRef, {
         title: memo.title,
-        url: url
-      }).catch((e) => {
+        items: memo.items,
+        totalAmount: memo.totalAmount,
+        createdAt: memo.createdAt || new Date().toISOString(),
+        sharedBy: user.uid,
+        sharedAt: new Date().toISOString()
+      });
+
+      url = `${window.location.origin}/shared-memo?id=${sharedMemoRef.id}`;
+    } catch (error) {
+      console.error("Error sharing memo to Firestore, falling back to base64:", error);
+      // Fallback to base64 encoding if Firestore fails
+      const data = {
+        t: memo.title,
+        i: memo.items.map((item: any) => ({
+          n: item.name,
+          q: item.quantity,
+          u: item.unit,
+          p: item.unitPrice,
+          t: item.total
+        })),
+        ta: memo.totalAmount,
+        d: memo.createdAt
+      };
+      
+      const utf8Bytes = new TextEncoder().encode(JSON.stringify(data));
+      const binString = Array.from(utf8Bytes, (byte) => String.fromCharCode(byte)).join('');
+      const base64 = btoa(binString);
+      
+      url = `${window.location.origin}/shared-memo?data=${base64}`;
+    }
+
+    try {
+      if (navigator.share) {
+        navigator.share({
+          title: memo.title,
+          url: url
+        }).catch((e) => {
+          navigator.clipboard.writeText(url);
+          setSuccessMessage('Link copied to clipboard!');
+        });
+      } else {
         navigator.clipboard.writeText(url);
         setSuccessMessage('Link copied to clipboard!');
-      });
-    } else {
-      navigator.clipboard.writeText(url);
-      setSuccessMessage('Link copied to clipboard!');
+      }
+    } catch (err) {
+      console.error("Clipboard error:", err);
+      alert("Failed to copy link. Please try again.");
+    } finally {
+      setSharingMemo(null);
     }
-    setSharingMemo(null);
   };
 
   useEffect(() => {

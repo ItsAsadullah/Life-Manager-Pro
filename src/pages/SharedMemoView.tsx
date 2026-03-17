@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { ShoppingCart, ArrowLeft, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export const SharedMemoView: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -11,32 +13,72 @@ export const SharedMemoView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const dataParam = searchParams.get('data');
-    if (dataParam) {
-      try {
-        const binString = atob(dataParam);
-        const utf8Bytes = new Uint8Array(Array.from(binString, (char) => char.charCodeAt(0)));
-        const decodedStr = new TextDecoder().decode(utf8Bytes);
-        const decoded = JSON.parse(decodedStr);
-        setMemo({
-          title: decoded.t,
-          items: decoded.i.map((item: any) => ({
-            name: item.n,
-            quantity: item.q,
-            unit: item.u,
-            unitPrice: item.p,
-            total: item.t
-          })),
-          totalAmount: decoded.ta,
-          createdAt: decoded.d
-        });
-      } catch (err) {
-        console.error('Failed to parse memo data', err);
-        setError('Invalid or corrupted memo link.');
+    const fetchMemo = async () => {
+      const idParam = searchParams.get('id');
+      const dataParam = searchParams.get('data');
+
+      if (idParam) {
+        try {
+          const docRef = doc(db, 'sharedMemos', idParam);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setMemo(docSnap.data());
+          } else {
+            setError('Memo not found or has been deleted.');
+          }
+        } catch (err) {
+          console.error('Error fetching memo:', err);
+          setError('Failed to load memo.');
+        }
+      } else if (dataParam) {
+        try {
+          // Fix for + characters being replaced by spaces in URL search params
+          const fixedDataParam = dataParam.replace(/ /g, '+');
+          
+          // Try the new encoding first
+          try {
+            const binString = atob(fixedDataParam);
+            const utf8Bytes = new Uint8Array(Array.from(binString, (char) => char.charCodeAt(0)));
+            const decodedStr = new TextDecoder().decode(utf8Bytes);
+            const decoded = JSON.parse(decodedStr);
+            setMemo({
+              title: decoded.t,
+              items: decoded.i.map((item: any) => ({
+                name: item.n,
+                quantity: item.q,
+                unit: item.u,
+                unitPrice: item.p,
+                total: item.t
+              })),
+              totalAmount: decoded.ta,
+              createdAt: decoded.d
+            });
+          } catch (newEncodingErr) {
+            // Fallback to old encoding if new encoding fails
+            const decoded = JSON.parse(decodeURIComponent(escape(atob(fixedDataParam))));
+            setMemo({
+              title: decoded.t,
+              items: decoded.i.map((item: any) => ({
+                name: item.n,
+                quantity: item.q,
+                unit: item.u,
+                unitPrice: item.p,
+                total: item.t
+              })),
+              totalAmount: decoded.ta,
+              createdAt: decoded.d
+            });
+          }
+        } catch (err) {
+          console.error('Failed to parse memo data', err);
+          setError('Invalid or corrupted memo link.');
+        }
+      } else {
+        setError('No memo data found in the link.');
       }
-    } else {
-      setError('No memo data found in the link.');
-    }
+    };
+
+    fetchMemo();
   }, [searchParams]);
 
   const handleDownloadImage = async () => {

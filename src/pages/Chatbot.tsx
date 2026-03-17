@@ -3,8 +3,6 @@ import { GoogleGenAI } from '@google/genai';
 import { Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
   const [input, setInput] = useState('');
@@ -29,6 +27,11 @@ export const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+      }
+      
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const chat = ai.chats.create({
         model: 'gemini-3.1-pro-preview',
         config: {
@@ -40,9 +43,9 @@ export const Chatbot: React.FC = () => {
       const response = await chat.sendMessage({ message: userMessage });
       
       setMessages(prev => [...prev, { role: 'model', text: response.text || 'Sorry, I could not process that.' }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'model', text: 'An error occurred while communicating with the AI.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: error.message || 'An error occurred while communicating with the AI.' }]);
     } finally {
       setIsLoading(false);
     }

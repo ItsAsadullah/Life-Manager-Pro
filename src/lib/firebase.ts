@@ -4,16 +4,17 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import aiStudioConfig from '../../firebase-applet-config.json';
 
-// Use environment variables if provided (e.g., in Vercel), otherwise fallback to AI Studio config
-const firebaseConfig = import.meta.env.VITE_FIREBASE_API_KEY ? {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)'
-} : aiStudioConfig;
+// Safely merge environment variables with AI Studio config
+// This prevents crashes if only some environment variables are set in Vercel
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || aiStudioConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || aiStudioConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || aiStudioConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || aiStudioConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || aiStudioConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || aiStudioConfig.appId,
+  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || aiStudioConfig.firestoreDatabaseId || '(default)'
+};
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

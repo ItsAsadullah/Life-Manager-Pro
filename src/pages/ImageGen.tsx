@@ -16,6 +16,10 @@ export const ImageGen: React.FC = () => {
     setGeneratedImage(null);
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+      }
+      
       // NOTE: gemini-3-pro-image-preview requires user's own API key.
       // In this environment, we assume window.aistudio handles key selection if needed,
       // but for simplicity we use the injected GEMINI_API_KEY.

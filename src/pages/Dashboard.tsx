@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
     };
   }, [user]);
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+  if (loading) return <div className="flex justify-center items-center h-64">{t('loading')}</div>;
 
   const totalExpense = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
   const totalBorrowed = debts.filter(d => d.type === 'borrowed' && d.status === 'pending').reduce((sum, d) => sum + (d.amount - (d.totalPaid || 0)), 0);
@@ -83,7 +83,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">{t('dashboard')}</h2>
         <div className="hidden md:block text-sm text-gray-500">
-          Welcome back, <span className="font-semibold text-indigo-600">{user?.displayName}</span>
+          {t('welcomeBack')}, <span className="font-semibold text-indigo-600">{user?.displayName}</span>
         </div>
       </div>
       
@@ -93,11 +93,11 @@ export const Dashboard: React.FC = () => {
           <p className="text-2xl font-bold text-gray-900">{currencySymbol}{totalExpense.toLocaleString()}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Borrowed</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('borrowed')}</h3>
           <p className="text-2xl font-bold text-red-600">{currencySymbol}{totalBorrowed.toLocaleString()}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Lent</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('lent')}</h3>
           <p className="text-2xl font-bold text-green-600">{currencySymbol}{totalLent.toLocaleString()}</p>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -108,7 +108,7 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Expense Analysis</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">{t('expenseAnalysis')}</h3>
           {chartData.length > 0 ? (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -144,13 +144,13 @@ export const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <p>No expense data available yet.</p>
+              <p>{t('noExpenseData')}</p>
             </div>
           )}
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Latest Notes</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">{t('latestNotes')}</h3>
           {notes.length > 0 ? (
             <div className="space-y-4">
               {notes.map(note => (
@@ -162,7 +162,7 @@ export const Dashboard: React.FC = () => {
                       {note.createdAt ? format(new Date(note.createdAt), 'MMM d, yyyy') : ''}
                     </span>
                     {note.isVoiceNote && (
-                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">VOICE</span>
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{t('voice')}</span>
                     )}
                   </div>
                 </div>
@@ -170,7 +170,7 @@ export const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <p>No notes found.</p>
+              <p>{t('noNotesFound')}</p>
             </div>
           )}
         </div>

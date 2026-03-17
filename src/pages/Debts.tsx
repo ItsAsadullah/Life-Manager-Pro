@@ -127,14 +127,12 @@ export const Debts: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving debt:', error);
-      alert('Failed to save debt record.');
     }
   };
 
   const handleAddRepayment = async (debtId: string) => {
     if (!user) return;
     if (!repaymentAmount) {
-      alert('Please enter repayment amount');
       return;
     }
     
@@ -164,10 +162,8 @@ export const Debts: React.FC = () => {
       setIsAddingRepayment(null);
       setRepaymentAmount('');
       setRepaymentNote('');
-      alert('Payment added successfully!');
     } catch (error) {
       console.error('Error adding repayment:', error);
-      alert('Failed to add payment. Please try again.');
     }
   };
 
@@ -230,7 +226,6 @@ export const Debts: React.FC = () => {
       setDebtToDelete(null);
     } catch (error) {
       console.error('Error deleting debt:', error);
-      alert('Failed to delete record.');
     }
   };
 
@@ -261,21 +256,21 @@ export const Debts: React.FC = () => {
       return sum + (d.amount - paid);
     }, 0);
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
+  if (loading) return <div className="flex justify-center items-center h-64">{t('loading')}</div>;
 
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('debts')}</h2>
-          <p className="text-gray-600">Track money you owe or are owed</p>
+          <p className="text-gray-600">{t('trackMoneyOwed')}</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
           className="w-full md:w-auto flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
         >
           <Plus size={20} className="mr-2" />
-          Add Record
+          {t('addRecord')}
         </button>
       </div>
 
@@ -304,7 +299,7 @@ export const Debts: React.FC = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-lg font-bold text-gray-900">{editingId ? 'Edit Record' : 'Add New Record'}</h3>
+              <h3 className="text-lg font-bold text-gray-900">{editingId ? t('editRecord') : t('addNewRecord')}</h3>
               <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
@@ -319,7 +314,7 @@ export const Debts: React.FC = () => {
                     type === 'borrowed' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  Borrowed
+                  {t('borrowed')}
                 </button>
                 <button
                   type="button"
@@ -328,12 +323,12 @@ export const Debts: React.FC = () => {
                     type === 'lent' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  Lent
+                  {t('lent')}
                 </button>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Person Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('personName')}</label>
                 <div className="relative">
                   <User className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   <input
@@ -342,13 +337,13 @@ export const Debts: React.FC = () => {
                     value={personName}
                     onChange={(e) => setPersonName(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter name"
+                    placeholder={t('enterName')}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('phoneNumberOptional')}</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   <input
@@ -356,13 +351,13 @@ export const Debts: React.FC = () => {
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter phone number"
+                    placeholder={t('enterPhoneNumber')}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount ({currencySymbol})</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('amount')} ({currencySymbol})</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   <SwipeableNumberInput
@@ -377,7 +372,7 @@ export const Debts: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('dueDateOptional')}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   <input
@@ -394,7 +389,7 @@ export const Debts: React.FC = () => {
                 className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
               >
                 <Save size={20} className="mr-2" />
-                {editingId ? 'Update Record' : 'Save Record'}
+                {editingId ? t('updateRecord') : t('saveRecord')}
               </button>
             </form>
           </div>
@@ -407,12 +402,12 @@ export const Debts: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Person</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('person')}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('type')}</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('amount')}</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('dueDate')}</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status')}</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -440,7 +435,7 @@ export const Debts: React.FC = () => {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         debt.type === 'borrowed' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
                       }`}>
-                        {debt.type === 'borrowed' ? 'Borrowed' : 'Lent'}
+                        {debt.type === 'borrowed' ? t('borrowed') : t('lent')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -451,14 +446,14 @@ export const Debts: React.FC = () => {
                       </div>
                       {totalPaid > 0 && (
                         <div className="text-[10px] text-gray-400">
-                          Paid: {currencySymbol}{totalPaid.toLocaleString()} | Rem: {currencySymbol}{remaining.toLocaleString()}
+                          {t('paidAmount')}: {currencySymbol}{totalPaid.toLocaleString()} | {t('remainingAmount')}: {currencySymbol}{remaining.toLocaleString()}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500">
                         <Clock size={14} className="mr-1" />
-                        {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : 'No date'}
+                        {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : t('noDate')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -471,9 +466,9 @@ export const Debts: React.FC = () => {
                         }`}
                       >
                         {debt.status === 'paid' ? (
-                          <><CheckCircle size={12} className="mr-1" /> Paid</>
+                          <><CheckCircle size={12} className="mr-1" /> {t('paid')}</>
                         ) : (
-                          <><Clock size={12} className="mr-1" /> Pending</>
+                          <><Clock size={12} className="mr-1" /> {t('pending')}</>
                         )}
                       </button>
                     </td>
@@ -499,29 +494,29 @@ export const Debts: React.FC = () => {
                       <td colSpan={6} className="px-6 py-4">
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
-                            <h4 className="text-sm font-bold text-gray-700">Repayment History</h4>
+                            <h4 className="text-sm font-bold text-gray-700">{t('repaymentHistory')}</h4>
                             <button 
                               onClick={() => setIsAddingRepayment(debt.id)}
                               className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
                             >
-                              <Plus size={14} className="mr-1" /> Add Payment
+                              <Plus size={14} className="mr-1" /> {t('addPayment')}
                             </button>
                           </div>
                           
                           {isAddingRepayment === debt.id && (
                             <div className="bg-white p-4 rounded-lg border border-gray-200 flex flex-wrap gap-3 items-end">
                               <div className="flex-1 min-w-[120px]">
-                                <label className="block text-[10px] uppercase text-gray-400 mb-1">Amount</label>
+                                <label className="block text-[10px] uppercase text-gray-400 mb-1">{t('amount')}</label>
                                 <SwipeableNumberInput 
                                   value={repaymentAmount}
                                   onChange={setRepaymentAmount}
                                   className="w-full px-3 py-1.5 border rounded text-sm"
-                                  placeholder="Amount"
+                                  placeholder={t('amount')}
                                   isPrice={true}
                                 />
                               </div>
                               <div className="flex-1 min-w-[120px]">
-                                <label className="block text-[10px] uppercase text-gray-400 mb-1">Date</label>
+                                <label className="block text-[10px] uppercase text-gray-400 mb-1">{t('date')}</label>
                                 <input 
                                   type="date" 
                                   value={repaymentDate}
@@ -530,13 +525,13 @@ export const Debts: React.FC = () => {
                                 />
                               </div>
                               <div className="flex-[2] min-w-[200px]">
-                                <label className="block text-[10px] uppercase text-gray-400 mb-1">Note</label>
+                                <label className="block text-[10px] uppercase text-gray-400 mb-1">{t('note')}</label>
                                 <input 
                                   type="text" 
                                   value={repaymentNote}
                                   onChange={(e) => setRepaymentNote(e.target.value)}
                                   className="w-full px-3 py-1.5 border rounded text-sm"
-                                  placeholder="Optional note"
+                                  placeholder={t('optionalNote')}
                                 />
                               </div>
                               <div className="flex gap-2">
@@ -544,13 +539,13 @@ export const Debts: React.FC = () => {
                                   onClick={() => handleAddRepayment(debt.id)}
                                   className="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm font-medium"
                                 >
-                                  Add
+                                  {t('add')}
                                 </button>
                                 <button 
                                   onClick={() => setIsAddingRepayment(null)}
                                   className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded text-sm font-medium"
                                 >
-                                  Cancel
+                                  {t('cancel')}
                                 </button>
                               </div>
                             </div>
@@ -577,7 +572,7 @@ export const Debts: React.FC = () => {
                               </div>
                             ))}
                             {(!debt.repayments || debt.repayments.length === 0) && (
-                              <p className="text-xs text-gray-400 text-center py-2">No payment history yet.</p>
+                              <p className="text-xs text-gray-400 text-center py-2">{t('noPaymentHistory')}</p>
                             )}
                           </div>
                         </div>
@@ -610,25 +605,25 @@ export const Debts: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="font-bold text-gray-900">{debt.personName}</h4>
-                      <p className="text-xs text-gray-500">{debt.phoneNumber || 'No phone'}</p>
+                      <p className="text-xs text-gray-500">{debt.phoneNumber || t('noPhone')}</p>
                     </div>
                   </div>
                   <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${
                     debt.type === 'borrowed' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
                   }`}>
-                    {debt.type === 'borrowed' ? 'Borrowed' : 'Lent'}
+                    {debt.type === 'borrowed' ? t('borrowed') : t('lent')}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-medium">Total Amount</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-medium">{t('totalAmount')}</p>
                     <p className={`text-lg font-bold ${debt.type === 'borrowed' ? 'text-red-600' : 'text-green-600'}`}>
                       {currencySymbol}{debt.amount.toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-medium">Remaining</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-medium">{t('remaining')}</p>
                     <p className="text-lg font-bold text-gray-900">{currencySymbol}{remaining.toLocaleString()}</p>
                   </div>
                 </div>
@@ -636,7 +631,7 @@ export const Debts: React.FC = () => {
                 <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                   <div className="flex items-center text-xs text-gray-500">
                     <Calendar size={14} className="mr-1" />
-                    {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : 'No due date'}
+                    {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : t('noDueDate')}
                   </div>
                   <button
                     onClick={() => toggleStatus(debt)}
@@ -644,7 +639,7 @@ export const Debts: React.FC = () => {
                       debt.status === 'paid' ? 'bg-indigo-50 text-indigo-600' : 'bg-yellow-50 text-yellow-600'
                     }`}
                   >
-                    {debt.status}
+                    {debt.status === 'paid' ? t('paid') : t('pending')}
                   </button>
                 </div>
 
@@ -656,7 +651,7 @@ export const Debts: React.FC = () => {
                     }}
                     className="flex-1 flex items-center justify-center py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold"
                   >
-                    {debt.type === 'borrowed' ? 'Repay' : 'Receive'} & History {isExpanded ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                    {debt.type === 'borrowed' ? t('repay') : t('receive')} & {t('history')} {isExpanded ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
                   </button>
                   <button 
                     onClick={() => handleEdit(debt)}
@@ -676,12 +671,12 @@ export const Debts: React.FC = () => {
               {isExpanded && (
                 <div className="bg-gray-50 p-4 border-t border-gray-100 space-y-4">
                   <div className="flex justify-between items-center">
-                    <h5 className="text-xs font-bold text-gray-700 uppercase">Repayment History</h5>
+                    <h5 className="text-xs font-bold text-gray-700 uppercase">{t('repaymentHistory')}</h5>
                     <button 
                       onClick={() => setIsAddingRepayment(debt.id)}
                       className="text-[10px] font-bold text-indigo-600 uppercase"
                     >
-                      + Add Payment
+                      + {t('addPayment')}
                     </button>
                   </div>
 
@@ -691,7 +686,7 @@ export const Debts: React.FC = () => {
                         value={repaymentAmount}
                         onChange={setRepaymentAmount}
                         className="w-full px-3 py-2 border rounded-lg text-sm"
-                        placeholder="Amount"
+                        placeholder={t('amount')}
                         isPrice={true}
                       />
                       <input 
@@ -705,20 +700,20 @@ export const Debts: React.FC = () => {
                         value={repaymentNote}
                         onChange={(e) => setRepaymentNote(e.target.value)}
                         className="w-full px-3 py-2 border rounded-lg text-sm"
-                        placeholder="Note (Optional)"
+                        placeholder={t('noteOptional')}
                       />
                       <div className="flex gap-2">
                         <button 
                           onClick={() => handleAddRepayment(debt.id)}
                           className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold"
                         >
-                          Save
+                          {t('save')}
                         </button>
                         <button 
                           onClick={() => setIsAddingRepayment(null)}
                           className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg text-xs font-bold"
                         >
-                          Cancel
+                          {t('cancel')}
                         </button>
                       </div>
                     </div>
@@ -740,7 +735,7 @@ export const Debts: React.FC = () => {
                       </div>
                     ))}
                     {(!debt.repayments || debt.repayments.length === 0) && (
-                      <p className="text-[10px] text-gray-400 text-center py-2 italic">No payment history found.</p>
+                      <p className="text-[10px] text-gray-400 text-center py-2 italic">{t('noPaymentHistory')}</p>
                     )}
                   </div>
                 </div>
@@ -755,8 +750,8 @@ export const Debts: React.FC = () => {
           <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <HandCoins className="text-gray-300" size={32} />
           </div>
-          <h3 className="text-lg font-medium text-gray-900">No debt records</h3>
-          <p className="text-gray-500 mt-1">Start by adding your first borrowed or lent record.</p>
+          <h3 className="text-lg font-medium text-gray-900">{t('noDebtRecords')}</h3>
+          <p className="text-gray-500 mt-1">{t('startAddingDebt')}</p>
         </div>
       )}
       {/* Delete Debt Confirmation Modal */}

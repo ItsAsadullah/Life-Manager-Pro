@@ -29,11 +29,11 @@ export const Expenses: React.FC = () => {
   }, [location]);
   
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Food');
-  const [source, setSource] = useState('Salary');
+  const [category, setCategory] = useState('food');
+  const [source, setSource] = useState('salary');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
   useEffect(() => {
     if (!user) return;
@@ -108,9 +108,9 @@ export const Expenses: React.FC = () => {
     }
   };
 
-  const categories = ['Food', 'Transport', 'Shopping', 'Bills', 'Entertainment', 'Health', 'Other'];
-  const incomeSources = ['Salary', 'Freelance', 'Business', 'Gift', 'Investment', 'Other'];
-  const paymentMethods = ['Cash', 'bKash', 'Nagad', 'Card', 'Bank Transfer'];
+  const categories = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'other'];
+  const incomeSources = ['salary', 'freelance', 'business', 'gift', 'investment', 'other'];
+  const paymentMethods = ['cash', 'bkash', 'nagad', 'card', 'bankTransfer'];
 
   const totalIncome = allIncs.reduce((sum, t) => sum + t.amount, 0);
   const totalExpense = allExps.reduce((sum, t) => sum + t.amount, 0);
@@ -120,14 +120,14 @@ export const Expenses: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('expenses')}</h2>
-          <p className="text-gray-500 text-sm">Manage your income and expenses</p>
+          <p className="text-gray-500 text-sm">{t('manageIncomeExpenses')}</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100"
         >
           <Plus size={20} className="mr-2" />
-          Add New
+          {t('addNew')}
         </button>
       </div>
 
@@ -156,7 +156,7 @@ export const Expenses: React.FC = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-lg font-bold">Add Transaction</h3>
+              <h3 className="text-lg font-bold">{t('addTransaction')}</h3>
               <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
@@ -171,7 +171,7 @@ export const Expenses: React.FC = () => {
                     activeTab === 'expense' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  Expense
+                  {t('expense')}
                 </button>
                 <button
                   type="button"
@@ -180,13 +180,13 @@ export const Expenses: React.FC = () => {
                     activeTab === 'income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  Income
+                  {t('income')}
                 </button>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount ({currencySymbol})</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('amount')} ({currencySymbol})</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
                     <SwipeableNumberInput
@@ -201,7 +201,7 @@ export const Expenses: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
                   <input
                     type="date"
                     required
@@ -214,48 +214,48 @@ export const Expenses: React.FC = () => {
                 {activeTab === 'expense' ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('category')}</label>
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
-                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        {categories.map(c => <option key={c} value={c}>{t(c)}</option>)}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('paymentMethod')}</label>
                       <select
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
-                        {paymentMethods.map(p => <option key={p} value={p}>{p}</option>)}
+                        {paymentMethods.map(p => <option key={p} value={p}>{t(p)}</option>)}
                       </select>
                     </div>
                   </>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('source')}</label>
                     <select
                       value={source}
                       onChange={(e) => setSource(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
-                      {incomeSources.map(s => <option key={s} value={s}>{s}</option>)}
+                      {incomeSources.map(s => <option key={s} value={s}>{t(s)}</option>)}
                     </select>
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={activeTab === 'expense' ? "What did you spend on?" : "Where did this come from?"}
+                  placeholder={activeTab === 'expense' ? t('expensePlaceholder') : t('incomePlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -268,7 +268,7 @@ export const Expenses: React.FC = () => {
                 } disabled:opacity-50`}
               >
                 <Save size={20} className="mr-2" />
-                {t('save')} {activeTab === 'expense' ? 'Expense' : 'Income'}
+                {t('save')} {activeTab === 'expense' ? t('expense') : t('income')}
               </button>
             </form>
           </div>
@@ -281,12 +281,12 @@ export const Expenses: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category/Source</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('date')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('type')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('categorySource')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('description')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('amount')}</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -299,11 +299,11 @@ export const Expenses: React.FC = () => {
                     <span className={`px-2 inline-flex text-[10px] leading-5 font-bold uppercase rounded-full ${
                       t.type === 'expense' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
                     }`}>
-                      {t.type}
+                      {t.type === 'expense' ? t('expense') : t('income')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {t.type === 'expense' ? t.category : t.source}
+                    {t.type === 'expense' ? t(t.category) : t(t.source)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {t.description || '-'}

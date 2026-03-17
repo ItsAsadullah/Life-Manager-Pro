@@ -9,6 +9,7 @@ export const ImageGen: React.FC = () => {
   const [size, setSize] = useState<'1K' | '2K' | '4K'>('1K');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,10 +17,11 @@ export const ImageGen: React.FC = () => {
 
     setIsGenerating(true);
     setGeneratedImage(null);
+    setError(null);
 
     try {
       if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+        throw new Error(t('apiKeyError'));
       }
       
       // NOTE: gemini-3-pro-image-preview requires user's own API key.
@@ -47,9 +49,9 @@ export const ImageGen: React.FC = () => {
           break;
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Image generation error:', error);
-      alert('Failed to generate image. Please try again.');
+      setError(error.message || t('imageGenFailed'));
     } finally {
       setIsGenerating(false);
     }
@@ -63,14 +65,19 @@ export const ImageGen: React.FC = () => {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('imageGen')}</h2>
-          <p className="text-gray-600">Create stunning images using Nano Banana Pro</p>
+          <p className="text-gray-600">{t('imageGenDescription')}</p>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleGenerate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Describe your image</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('describeImage')}</label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -82,15 +89,15 @@ export const ImageGen: React.FC = () => {
 
           <div className="flex items-center space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image Size</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('imageSize')}</label>
               <select
                 value={size}
                 onChange={(e) => setSize(e.target.value as any)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
-                <option value="1K">1K (Standard)</option>
-                <option value="2K">2K (High Quality)</option>
-                <option value="4K">4K (Ultra HD)</option>
+                <option value="1K">1K ({t('standard')})</option>
+                <option value="2K">2K ({t('highQuality')})</option>
+                <option value="4K">4K ({t('ultraHD')})</option>
               </select>
             </div>
             
@@ -103,10 +110,10 @@ export const ImageGen: React.FC = () => {
                 {isGenerating ? (
                   <>
                     <Loader2 className="animate-spin mr-2" size={20} />
-                    Generating...
+                    {t('generating')}
                   </>
                 ) : (
-                  'Generate Image'
+                  t('generateImage')
                 )}
               </button>
             </div>
@@ -117,14 +124,14 @@ export const ImageGen: React.FC = () => {
       {generatedImage && (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Result</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t('result')}</h3>
             <a
               href={generatedImage}
               download="generated-image.png"
               className="flex items-center px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
             >
               <Download size={16} className="mr-2" />
-              Download
+              {t('download')}
             </a>
           </div>
           <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex justify-center">

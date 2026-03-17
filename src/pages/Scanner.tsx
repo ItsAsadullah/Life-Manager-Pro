@@ -50,7 +50,6 @@ export const Scanner: React.FC = () => {
 
     } catch (error) {
       console.error('OCR Error:', error);
-      alert('Failed to scan image.');
     } finally {
       setIsScanning(false);
     }
@@ -78,10 +77,10 @@ export const Scanner: React.FC = () => {
       if (totalAmount) {
         await addDoc(collection(db, 'users', user.uid, 'expenses'), {
           amount: Number(totalAmount),
-          category: 'Shopping',
-          description: 'Scanned Voucher',
+          category: 'shopping',
+          description: t('scannedVoucher'),
           date: new Date().toISOString(),
-          paymentMethod: 'Cash',
+          paymentMethod: 'cash',
           voucherId: voucherRef.id,
           createdAt: new Date().toISOString()
         });
@@ -90,7 +89,6 @@ export const Scanner: React.FC = () => {
       setSaved(true);
     } catch (error) {
       console.error('Error saving voucher:', error);
-      alert('Failed to save voucher.');
     } finally {
       setIsSaving(false);
     }
@@ -99,7 +97,7 @@ export const Scanner: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">{t('scanner')}</h2>
-      <p className="text-gray-600">Upload a receipt to automatically extract text and save it as an expense.</p>
+      <p className="text-gray-600">{t('scannerDescription')}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Upload Section */}
@@ -117,9 +115,9 @@ export const Scanner: React.FC = () => {
               <div className="space-y-4">
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="text-sm text-gray-600">
-                  <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
+                  <span className="font-semibold text-indigo-600">{t('clickToUpload')}</span> {t('dragAndDrop')}
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                <p className="text-xs text-gray-500">{t('fileTypes')}</p>
               </div>
             )}
           </div>
@@ -133,12 +131,12 @@ export const Scanner: React.FC = () => {
               {isScanning ? (
                 <>
                   <Loader2 className="animate-spin mr-2" size={20} />
-                  Scanning...
+                  {t('scanning')}
                 </>
               ) : (
                 <>
                   <FileText className="mr-2" size={20} />
-                  Extract Text
+                  {t('extractText')}
                 </>
               )}
             </button>
@@ -148,7 +146,7 @@ export const Scanner: React.FC = () => {
         {/* Results Section */}
         {extractedText && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Extracted Information</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('extractedInfo')}</h3>
             
             <div className="flex-1 space-y-4">
               <div>
@@ -160,11 +158,11 @@ export const Scanner: React.FC = () => {
                   placeholder="0.00"
                   isPrice={true}
                 />
-                <p className="text-xs text-gray-500 mt-1">Edit if the auto-detected amount is incorrect.</p>
+                <p className="text-xs text-gray-500 mt-1">{t('editAmountInfo')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Raw Text</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('rawText')}</label>
                 <textarea
                   value={extractedText}
                   onChange={(e) => setExtractedText(e.target.value)}
@@ -178,7 +176,7 @@ export const Scanner: React.FC = () => {
               {saved ? (
                 <div className="flex items-center justify-center p-3 bg-green-50 text-green-700 rounded-lg">
                   <CheckCircle className="mr-2" size={20} />
-                  Saved successfully!
+                  {t('savedSuccessfully')}
                 </div>
               ) : (
                 <button
@@ -189,10 +187,10 @@ export const Scanner: React.FC = () => {
                   {isSaving ? (
                     <>
                       <Loader2 className="animate-spin mr-2" size={20} />
-                      Saving...
+                      {t('saving')}
                     </>
                   ) : (
-                    'Save as Expense'
+                    t('saveAsExpense')
                   )}
                 </button>
               )}

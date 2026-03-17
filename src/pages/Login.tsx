@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Navigate } from 'react-router-dom';
 import { AlertCircle, Loader2, ShieldCheck, Layout, Sparkles, Smartphone } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export const Login: React.FC = () => {
   const { user, signInWithGoogle } = useAuth();
+  const { t } = useSettings();
   const [error, setError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -59,7 +61,7 @@ export const Login: React.FC = () => {
               Hisab <span className="text-indigo-400">Nikash</span>
             </h1>
             <p className="text-indigo-200/70 text-sm font-medium mb-8">
-              Your All-in-one Personal Life Management System
+              {t('loginSubtitle')}
             </p>
 
             <div className="grid grid-cols-3 gap-4 mb-10">
@@ -67,19 +69,19 @@ export const Login: React.FC = () => {
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-indigo-300">
                   <Layout size={20} />
                 </div>
-                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">Dashboard</span>
+                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">{t('dashboard')}</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-indigo-300">
                   <Sparkles size={20} />
                 </div>
-                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">AI Tools</span>
+                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">{t('aiTools')}</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-indigo-300">
                   <Smartphone size={20} />
                 </div>
-                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">Mobile Ready</span>
+                <span className="text-[10px] text-indigo-200/50 uppercase font-bold tracking-widest">{t('mobileReady')}</span>
               </div>
             </div>
 
@@ -104,7 +106,7 @@ export const Login: React.FC = () => {
                 {isLoggingIn ? (
                   <>
                     <Loader2 className="animate-spin mr-2" size={20} />
-                    Authenticating...
+                    {t('authenticating')}
                   </>
                 ) : (
                   <>
@@ -126,21 +128,21 @@ export const Login: React.FC = () => {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    Continue with Google
+                    {t('continueWithGoogle')}
                   </>
                 )}
               </span>
             </button>
             
             <p className="mt-8 text-[10px] text-indigo-200/30 uppercase font-bold tracking-[0.2em]">
-              Secure Authentication via Firebase
+              {t('secureAuth')}
             </p>
           </div>
         </div>
         
         <div className="mt-8 text-center">
           <p className="text-indigo-200/40 text-xs">
-            Developed by <span className="text-indigo-200/60 font-bold">Asadullah Al Galib</span>
+            {t('developedBy')} <span className="text-indigo-200/60 font-bold">Asadullah Al Galib</span>
           </p>
         </div>
       </motion.div>

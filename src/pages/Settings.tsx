@@ -38,7 +38,7 @@ export const Settings: React.FC = () => {
       setMessage({ type: 'success', text: t('backupSuccess') });
     } catch (error) {
       console.error('Export error:', error);
-      setMessage({ type: 'error', text: 'Export failed' });
+      setMessage({ type: 'error', text: t('exportFailed') });
     } finally {
       setIsExporting(false);
     }
@@ -82,7 +82,7 @@ export const Settings: React.FC = () => {
     <div className="max-w-2xl mx-auto space-y-6">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">{t('settings')}</h1>
-        <p className="text-gray-500">Manage your application preferences and data</p>
+        <p className="text-gray-500">{t('managePreferences')}</p>
       </header>
 
       {message && (
@@ -138,9 +138,9 @@ export const Settings: React.FC = () => {
         </div>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { id: 'BDT', label: 'Taka', symbol: '৳' },
-            { id: 'INR', label: 'Rupee', symbol: '₹' },
-            { id: 'USD', label: 'Dollar', symbol: '$' },
+            { id: 'BDT', label: t('taka'), symbol: '৳' },
+            { id: 'INR', label: t('rupee'), symbol: '₹' },
+            { id: 'USD', label: t('dollar'), symbol: '$' },
           ].map((c) => (
             <button
               key={c.id}
@@ -150,7 +150,7 @@ export const Settings: React.FC = () => {
               }`}
             >
               <span className="block text-xl font-bold mb-1">{c.symbol}</span>
-              <span className="text-xs font-medium">{c.id}</span>
+              <span className="text-xs font-medium">{c.label} ({c.id})</span>
             </button>
           ))}
         </div>
@@ -174,7 +174,7 @@ export const Settings: React.FC = () => {
               <Download size={20} className="text-gray-500 group-hover:text-indigo-600" />
               <div className="text-left">
                 <span className="block font-bold text-gray-900">{t('export')}</span>
-                <span className="text-xs text-gray-500">Download all your data as a JSON file</span>
+                <span className="text-xs text-gray-500">{t('exportDescription')}</span>
               </div>
             </div>
             {isExporting && <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-600 border-t-transparent" />}
@@ -185,7 +185,7 @@ export const Settings: React.FC = () => {
               <Upload size={20} className="text-gray-500 group-hover:text-amber-600" />
               <div className="text-left">
                 <span className="block font-bold text-gray-900">{t('import')}</span>
-                <span className="text-xs text-gray-500">Restore data from a backup file</span>
+                <span className="text-xs text-gray-500">{t('importDescription')}</span>
               </div>
             </div>
             <input type="file" accept=".json" onChange={handleImport} className="hidden" disabled={isImporting} />

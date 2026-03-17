@@ -180,7 +180,7 @@ export const Notes: React.FC = () => {
   };
 
   const deleteNote = async (id: string) => {
-    if (!user || !window.confirm('Are you sure you want to delete this note?')) return;
+    if (!user || !window.confirm(t('confirmDeleteNote'))) return;
     await deleteDoc(doc(db, 'users', user.uid, 'notes', id));
   };
 
@@ -257,14 +257,14 @@ export const Notes: React.FC = () => {
                 <button 
                   onClick={() => setNoteType('text')}
                   className={`p-2 rounded-lg transition-colors ${noteType === 'text' ? 'bg-black/10' : 'hover:bg-black/5'}`}
-                  title="Text Note"
+                  title={t('textNote')}
                 >
                   <Type size={18} />
                 </button>
                 <button 
                   onClick={() => setNoteType('checklist')}
                   className={`p-2 rounded-lg transition-colors ${noteType === 'checklist' ? 'bg-black/10' : 'hover:bg-black/5'}`}
-                  title="Checklist"
+                  title={t('checklist')}
                 >
                   <CheckSquare size={18} />
                 </button>
@@ -272,7 +272,7 @@ export const Notes: React.FC = () => {
                   <button 
                     onClick={() => setShowColorPicker(!showColorPicker)}
                     className="p-2 rounded-lg hover:bg-black/5 transition-colors"
-                    title="Change Color"
+                    title={t('changeColor')}
                   >
                     <Palette size={18} />
                   </button>
@@ -294,7 +294,7 @@ export const Notes: React.FC = () => {
                 <button 
                   onClick={() => setIsPinned(!isPinned)}
                   className={`p-2 rounded-lg transition-colors ${isPinned ? 'bg-black/10 text-indigo-600' : 'hover:bg-black/5'}`}
-                  title="Pin Note"
+                  title={t('pinNote')}
                 >
                   <Pin size={18} fill={isPinned ? 'currentColor' : 'none'} />
                 </button>
@@ -307,30 +307,30 @@ export const Notes: React.FC = () => {
             <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Note Title"
+                placeholder={t('noteTitle')}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-transparent text-xl font-bold placeholder:text-gray-400 focus:outline-none"
               />
               
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Category:</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('category')}:</span>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="bg-transparent text-xs font-bold text-indigo-600 focus:outline-none cursor-pointer"
                 >
-                  <option value="Personal">Personal</option>
-                  <option value="Work">Work</option>
-                  <option value="Idea">Idea</option>
-                  <option value="Reminder">Reminder</option>
+                  <option value="Personal">{t('personal')}</option>
+                  <option value="Work">{t('work')}</option>
+                  <option value="Idea">{t('idea')}</option>
+                  <option value="Reminder">{t('reminder')}</option>
                 </select>
               </div>
 
               {noteType === 'text' ? (
                 <div className="relative">
                   <textarea
-                    placeholder="Write your note here or use voice typing..."
+                    placeholder={t('notePlaceholder')}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={5}
@@ -341,7 +341,7 @@ export const Notes: React.FC = () => {
                     className={`absolute bottom-0 right-0 p-3 rounded-full shadow-lg ${
                       isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
-                    title={isRecording ? 'Stop recording' : 'Start voice typing'}
+                    title={isRecording ? t('stopRecording') : t('startVoiceTyping')}
                   >
                     {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
                   </button>
@@ -360,7 +360,7 @@ export const Notes: React.FC = () => {
                         type="text"
                         value={item.text}
                         onChange={(e) => updateChecklistItem(item.id, e.target.value)}
-                        placeholder="List item..."
+                        placeholder={t('listItem')}
                         className={`flex-1 bg-transparent focus:outline-none ${item.checked ? 'line-through text-gray-400' : ''}`}
                         autoFocus={!item.text}
                       />
@@ -376,7 +376,7 @@ export const Notes: React.FC = () => {
                     onClick={addChecklistItem}
                     className="flex items-center text-sm text-gray-500 hover:text-indigo-600 transition-colors mt-2"
                   >
-                    <Plus size={16} className="mr-1" /> Add item
+                    <Plus size={16} className="mr-1" /> {t('addItem')}
                   </button>
                 </div>
               )}
@@ -388,7 +388,7 @@ export const Notes: React.FC = () => {
                   className="flex items-center px-6 py-2.5 bg-black text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 shadow-lg transition-all font-bold"
                 >
                   <Save size={18} className="mr-2" />
-                  {editingNote ? 'Update Note' : 'Save Note'}
+                  {editingNote ? t('updateNote') : t('saveNote')}
                 </button>
               </div>
             </div>
@@ -400,7 +400,7 @@ export const Notes: React.FC = () => {
         {pinnedNotes.length > 0 && (
           <div>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-              <Pin size={14} className="mr-2" /> Pinned
+              <Pin size={14} className="mr-2" /> {t('pinned')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pinnedNotes.map(note => (
@@ -420,7 +420,7 @@ export const Notes: React.FC = () => {
 
         <div>
           {pinnedNotes.length > 0 && (
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Others</h3>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{t('others')}</h3>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {otherNotes.map(note => (
@@ -442,8 +442,8 @@ export const Notes: React.FC = () => {
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <StickyNote className="text-gray-300" size={32} />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">No notes found</h3>
-            <p className="text-gray-500">Create your first note to stay organized!</p>
+            <h3 className="text-lg font-bold text-gray-900">{t('noNotesFound')}</h3>
+            <p className="text-gray-500">{t('createFirstNote')}</p>
           </div>
         )}
       </div>
@@ -452,6 +452,7 @@ export const Notes: React.FC = () => {
 };
 
 const NoteCard = ({ note, onEdit, onDelete, onPin, onArchive, onToggleCheck }: any) => {
+  const { t } = useSettings();
   const color = COLORS.find(c => c.bg === note.color) || COLORS[0];
   
   return (
@@ -504,7 +505,7 @@ const NoteCard = ({ note, onEdit, onDelete, onPin, onArchive, onToggleCheck }: a
             ))}
             {note.checklist?.length > 5 && (
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-2">
-                + {note.checklist.length - 5} more items
+                + {note.checklist.length - 5} {t('moreItems')}
               </p>
             )}
           </div>

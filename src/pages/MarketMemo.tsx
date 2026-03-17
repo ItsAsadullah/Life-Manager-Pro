@@ -65,19 +65,19 @@ export const MarketMemo: React.FC = () => {
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
   const handleShareText = (memo: any) => {
-    let text = `🛒 Market Memo: ${memo.title}\n`;
+    let text = `🛒 ${t('marketMemoTitle')}: ${memo.title}\n`;
     if (memo.createdAt) {
-      text += `📅 Date: ${format(new Date(memo.createdAt), 'MMM d, yyyy')}\n`;
+      text += `📅 ${t('date')}: ${format(new Date(memo.createdAt), 'MMM d, yyyy')}\n`;
     }
     text += `------------------------\n`;
     memo.items.forEach((item: any, index: number) => {
-      text += `${index + 1}. ${item.name} - ${item.quantity}${item.unit} @ ৳${item.unitPrice} = ৳${item.total}\n`;
+      text += `${index + 1}. ${item.name} - ${item.quantity}${t(item.unit)} @ ${currencySymbol}${item.unitPrice} = ${currencySymbol}${item.total}\n`;
     });
     text += `------------------------\n`;
-    text += `💰 Total: ৳${memo.totalAmount.toLocaleString()}\n\n`;
-    text += `Developed by: Asadullah Al Galib\n`;
+    text += `💰 ${t('total')}: ${currencySymbol}${memo.totalAmount.toLocaleString()}\n\n`;
+    text += `${t('developedBy')}: Asadullah Al Galib\n`;
     text += `B.Sc in CSE, 01911777694\n`;
-    text += `Created with Hisab Nikash App\n`;
+    text += `${t('createdWith')}\n`;
 
     if (navigator.share) {
       navigator.share({
@@ -86,7 +86,7 @@ export const MarketMemo: React.FC = () => {
       }).catch(console.error);
     } else {
       navigator.clipboard.writeText(text);
-      setSuccessMessage('Copied to clipboard!');
+      setSuccessMessage(t('copiedToClipboard'));
     }
     setSharingMemo(null);
   };
@@ -117,10 +117,9 @@ export const MarketMemo: React.FC = () => {
       link.download = `Market_Memo_${memo.title.replace(/\s+/g, '_')}.png`;
       link.href = dataUrl;
       link.click();
-      setSuccessMessage('Image downloaded!');
+      setSuccessMessage(t('imageDownloaded'));
     } catch (err) {
       console.error('Failed to generate image', err);
-      alert('Failed to generate image. Please try again.');
     } finally {
       element.setAttribute('style', originalStyle);
       setSharingMemo(null);
@@ -155,10 +154,9 @@ export const MarketMemo: React.FC = () => {
       });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       pdf.save(`Market_Memo_${memo.title.replace(/\s+/g, '_')}.pdf`);
-      setSuccessMessage('PDF downloaded!');
+      setSuccessMessage(t('pdfDownloaded'));
     } catch (err) {
       console.error('Failed to generate PDF', err);
-      alert('Failed to generate PDF. Please try again.');
     } finally {
       element.setAttribute('style', originalStyle);
       setSharingMemo(null);
@@ -218,15 +216,14 @@ export const MarketMemo: React.FC = () => {
           url: url
         }).catch((e) => {
           navigator.clipboard.writeText(url);
-          setSuccessMessage('Link copied to clipboard!');
+          setSuccessMessage(t('linkCopied'));
         });
       } else {
         navigator.clipboard.writeText(url);
-        setSuccessMessage('Link copied to clipboard!');
+        setSuccessMessage(t('linkCopied'));
       }
     } catch (err) {
       console.error("Clipboard error:", err);
-      alert("Failed to copy link. Please try again.");
     } finally {
       setSharingMemo(null);
     }
@@ -271,7 +268,7 @@ export const MarketMemo: React.FC = () => {
     setItemError('');
 
     if (!itemName.trim()) {
-      setItemError('Item name cannot be empty.');
+      setItemError(t('itemNameEmpty'));
       return;
     }
     
@@ -279,12 +276,12 @@ export const MarketMemo: React.FC = () => {
     const unitPrice = Number(itemUnitPrice);
 
     if (!itemQuantity || isNaN(quantity) || quantity <= 0) {
-      setItemError('Quantity must be a positive number.');
+      setItemError(t('qtyPositive'));
       return;
     }
 
     if (itemUnitPrice === '' || isNaN(unitPrice) || unitPrice < 0) {
-      setItemError('Unit price must be a valid positive number.');
+      setItemError(t('unitPricePositive'));
       return;
     }
     
@@ -322,11 +319,9 @@ export const MarketMemo: React.FC = () => {
     const q = Number(inlineQty);
     const p = Number(inlinePrice);
     if (!inlineName.trim()) {
-      alert("Name cannot be empty");
       return;
     }
     if (isNaN(q) || isNaN(p) || q <= 0 || p < 0) {
-      alert("Please enter valid positive numbers for quantity and price");
       return;
     }
     const newItems = items.map(item => 
@@ -399,13 +394,13 @@ export const MarketMemo: React.FC = () => {
           try {
             await updateDoc(doc(db, 'users', user.uid, 'expenses', editingMemoExpenseId), {
               amount: totalAmount,
-              description: `Market Memo: ${title}`,
+              description: `${t('marketMemo')}: ${title}`,
             });
           } catch (expenseError) {
             console.warn('Failed to update linked expense. It may have been deleted.', expenseError);
           }
         }
-        setSuccessMessage('Memo updated successfully!');
+        setSuccessMessage(t('memoUpdated'));
       } else {
         await addDoc(collection(db, 'users', user.uid, 'marketMemos'), {
           title,
@@ -413,12 +408,11 @@ export const MarketMemo: React.FC = () => {
           totalAmount,
           createdAt: new Date().toISOString()
         });
-        setSuccessMessage('Memo saved successfully!');
+        setSuccessMessage(t('memoSaved'));
       }
       closeModal();
     } catch (error) {
       console.error('Error saving memo:', error);
-      alert('Failed to save memo.');
     }
   };
 
@@ -454,7 +448,6 @@ export const MarketMemo: React.FC = () => {
       setMemoToDelete(null);
     } catch (error) {
       console.error('Error deleting memo:', error);
-      alert('Failed to delete memo.');
     }
   };
 
@@ -465,7 +458,7 @@ export const MarketMemo: React.FC = () => {
       const expenseRef = await addDoc(collection(db, 'users', user.uid, 'expenses'), {
         amount: memo.totalAmount,
         category: 'Shopping',
-        description: `Market Memo: ${memo.title}`,
+        description: `${t('marketMemo')}: ${memo.title}`,
         date: new Date().toISOString(),
         paymentMethod: 'Cash',
         createdAt: new Date().toISOString()
@@ -475,10 +468,9 @@ export const MarketMemo: React.FC = () => {
         expenseId: expenseRef.id
       });
       
-      setSuccessMessage('Successfully converted to Expense!');
+      setSuccessMessage(t('convertedToExpense'));
     } catch (error) {
       console.error('Error converting to expense:', error);
-      alert('Failed to convert to expense.');
     }
   };
 
@@ -489,7 +481,7 @@ export const MarketMemo: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('marketMemo')}</h2>
-          <p className="text-gray-600">Create digital bazaar lists and track costs</p>
+          <p className="text-gray-600">{t('createBazaarList')}</p>
         </div>
         <button
           onClick={handleNewMemo}
@@ -503,13 +495,13 @@ export const MarketMemo: React.FC = () => {
       {isAdding && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-20">
-            <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? 'Edit Market Memo' : 'Create Market Memo'}</h3>
+            <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? t('editMarketMemo') : t('createMarketMemo')}</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
                 className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
-                title="Undo"
+                title={t('undo')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
               </button>
@@ -517,7 +509,7 @@ export const MarketMemo: React.FC = () => {
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
                 className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
-                title="Redo"
+                title={t('redo')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
               </button>
@@ -527,7 +519,7 @@ export const MarketMemo: React.FC = () => {
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm ml-2"
               >
                 <Save className="w-4 h-4" />
-                {editingMemoId ? 'Update' : 'Save'}
+                {editingMemoId ? t('update') : t('save')}
               </button>
               <button onClick={closeModal} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
                 <X size={24} />
@@ -538,10 +530,10 @@ export const MarketMemo: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
             <div className="max-w-4xl mx-auto space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Memo Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('memoTitle')}</label>
                 <input
                   type="text"
-                  placeholder="e.g., Weekly Grocery, Friday Market"
+                  placeholder={t('memoPlaceholder')}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -549,20 +541,20 @@ export const MarketMemo: React.FC = () => {
               </div>
 
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Items</h3>
+                <h3 className="text-lg font-bold text-gray-800">{t('items')}</h3>
                 <button
                   onClick={() => setIsAddItemVisible(!isAddItemVisible)}
                   className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 text-sm font-medium transition-colors"
                 >
                   {isAddItemVisible ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
-                  {isAddItemVisible ? 'Cancel' : 'Add new item'}
+                  {isAddItemVisible ? t('cancel') : t('addNewItem')}
                 </button>
               </div>
 
               {isAddItemVisible && (
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700">Add Item</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">{t('addItem')}</h4>
                     {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded">{itemError}</span>}
                   </div>
                   <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
@@ -570,7 +562,7 @@ export const MarketMemo: React.FC = () => {
                       <input
                         ref={nameInputRef}
                         type="text"
-                        placeholder="Item Name"
+                        placeholder={t('itemName')}
                         required
                         value={itemName}
                         onChange={(e) => setItemName(e.target.value)}
@@ -579,7 +571,7 @@ export const MarketMemo: React.FC = () => {
                     </div>
                     <div>
                       <SwipeableNumberInput
-                        placeholder="Qty"
+                        placeholder={t('qty')}
                         required
                         value={itemQuantity}
                         onChange={setItemQuantity}
@@ -592,7 +584,7 @@ export const MarketMemo: React.FC = () => {
                         onChange={(e) => setItemUnit(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                       >
-                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                        {units.map(u => <option key={u} value={u}>{t(u)}</option>)}
                       </select>
                     </div>
                     <div>
@@ -611,7 +603,7 @@ export const MarketMemo: React.FC = () => {
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2"
                       >
                         <Plus size={16} />
-                        যুক্ত করুন
+                        {t('add')}
                       </button>
                     </div>
                   </form>
@@ -623,12 +615,12 @@ export const MarketMemo: React.FC = () => {
                   <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-3 shadow-sm">
                     <div className="flex justify-between text-sm mb-2">
                       <div>
-                        <span className="text-gray-500">কেনা হয়েছে:</span>{' '}
-                        <span className="font-bold text-green-600">৳{purchasedAmount.toLocaleString()}</span>
+                        <span className="text-gray-500">{t('purchased')}:</span>{' '}
+                        <span className="font-bold text-green-600">{currencySymbol}{purchasedAmount.toLocaleString()}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">বাকি আছে:</span>{' '}
-                        <span className="font-bold text-red-600">৳{remainingAmount.toLocaleString()}</span>
+                        <span className="text-gray-500">{t('remaining')}:</span>{' '}
+                        <span className="font-bold text-red-600">{currencySymbol}{remainingAmount.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -643,10 +635,10 @@ export const MarketMemo: React.FC = () => {
                     <table className="w-full text-sm text-left">
                       <thead className="bg-[#9b87f5] text-white">
                         <tr>
-                          <th className="px-3 py-3 font-medium">বিবরণ</th>
-                          <th className="px-3 py-3 font-medium text-center">পরিমাণ</th>
-                          <th className="px-3 py-3 font-medium text-right">দর</th>
-                          <th className="px-3 py-3 font-medium text-right">টাকার পরিমাণ</th>
+                          <th className="px-3 py-3 font-medium">{t('description')}</th>
+                          <th className="px-3 py-3 font-medium text-center">{t('quantity')}</th>
+                          <th className="px-3 py-3 font-medium text-right">{t('rate')}</th>
+                          <th className="px-3 py-3 font-medium text-right">{t('totalAmount')}</th>
                           <th className="px-3 py-3 w-10 text-center"></th>
                         </tr>
                       </thead>
@@ -661,7 +653,7 @@ export const MarketMemo: React.FC = () => {
                                 <div className="flex gap-1 justify-center">
                                   <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-12 px-1 py-1 text-sm border border-indigo-300 rounded text-center" />
                                   <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 rounded p-0 bg-white">
-                                    {units.map(u => <option key={u} value={u}>{u}</option>)}
+                                    {units.map(u => <option key={u} value={u}>{t(u)}</option>)}
                                   </select>
                                 </div>
                               </td>
@@ -713,8 +705,8 @@ export const MarketMemo: React.FC = () => {
                     
                     {/* Footer Summary */}
                     <div className="bg-[#9b87f5] text-white px-4 py-3 flex justify-between items-center text-sm font-medium">
-                      <span>মোট পণ্য: {items.length} টি</span>
-                      <span>মোট মূল্য: {totalAmount.toLocaleString()} ৳</span>
+                      <span>{t('totalItems')}: {items.length}</span>
+                      <span>{t('totalAmount')}: {currencySymbol}{totalAmount.toLocaleString()}</span>
                     </div>
                   </div>
                 </>
@@ -739,21 +731,21 @@ export const MarketMemo: React.FC = () => {
                 <button 
                   onClick={() => setSharingMemo(memo)} 
                   className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                  title="Share Memo"
+                  title={t('shareMemo')}
                 >
                   <Share2 size={18} />
                 </button>
                 <button 
                   onClick={() => handleEditMemo(memo)} 
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="Edit Memo"
+                  title={t('editMemo')}
                 >
                   <Edit2 size={18} />
                 </button>
                 <button 
                   onClick={() => handleDeleteMemo(memo.id)} 
                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Delete Memo"
+                  title={t('deleteMemo')}
                 >
                   <Trash2 size={18} />
                 </button>
@@ -769,7 +761,7 @@ export const MarketMemo: React.FC = () => {
                   </li>
                 ))}
                 {memo.items.length > 3 && (
-                  <li className="text-xs text-gray-400 italic">+{memo.items.length - 3} more items...</li>
+                  <li className="text-xs text-gray-400 italic">+{memo.items.length - 3} {t('moreItems')}</li>
                 )}
               </ul>
             </div>
@@ -777,11 +769,11 @@ export const MarketMemo: React.FC = () => {
             <div className="pt-4 border-t border-gray-100">
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Purchased</span>
+                  <span className="text-gray-500">{t('purchased')}</span>
                   <span className="text-green-600 font-bold">{currencySymbol}{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Remaining</span>
+                  <span className="text-gray-500">{t('remaining')}</span>
                   <span className="text-red-600 font-bold">{currencySymbol}{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
                 </div>
                 <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
@@ -792,14 +784,14 @@ export const MarketMemo: React.FC = () => {
                 </div>
               </div>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-medium text-gray-500">Total Amount</span>
+                <span className="text-sm font-medium text-gray-500">{t('totalAmount')}</span>
                 <span className="text-lg font-bold text-indigo-600">{currencySymbol}{memo.totalAmount.toLocaleString()}</span>
               </div>
               
               {memo.expenseId ? (
                 <div className="w-full flex justify-center items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
                   <CheckCircle size={16} className="mr-2" />
-                  <span className="text-sm font-medium">Added to Expenses</span>
+                  <span className="text-sm font-medium">{t('addedToExpenses')}</span>
                 </div>
               ) : (
                 <button

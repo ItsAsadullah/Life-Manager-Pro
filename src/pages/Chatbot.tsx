@@ -30,7 +30,7 @@ export const Chatbot: React.FC = () => {
 
     try {
       if (!process.env.GEMINI_API_KEY) {
-        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+        throw new Error(t('apiKeyError'));
       }
       
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -44,10 +44,10 @@ export const Chatbot: React.FC = () => {
       // Send previous context if needed (simplified for MVP)
       const response = await chat.sendMessage({ message: userMessage });
       
-      setMessages(prev => [...prev, { role: 'model', text: response.text || 'Sorry, I could not process that.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: response.text || t('chatError') }]);
     } catch (error: any) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'model', text: error.message || 'An error occurred while communicating with the AI.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: error.message || t('chatError') }]);
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +59,7 @@ export const Chatbot: React.FC = () => {
         <Bot className="text-indigo-600 mr-3" size={24} />
         <div>
           <h2 className="text-lg font-bold text-gray-900">{t('chatbot')}</h2>
-          <p className="text-sm text-gray-600">Powered by Gemini 3.1 Pro</p>
+          <p className="text-sm text-gray-600">{t('aiModelInfo')}</p>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ export const Chatbot: React.FC = () => {
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
             <Bot size={48} className="text-indigo-200" />
-            <p>Hello! I'm your personal AI assistant. How can I help you today?</p>
+            <p>{t('aiAssistantWelcome')}</p>
           </div>
         )}
         
@@ -103,7 +103,7 @@ export const Chatbot: React.FC = () => {
               </div>
               <div className="px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 rounded-tl-none flex items-center">
                 <Loader2 className="animate-spin text-gray-500" size={20} />
-                <span className="ml-2 text-sm text-gray-500">Thinking...</span>
+                <span className="ml-2 text-sm text-gray-500">{t('thinking')}</span>
               </div>
             </div>
           </div>

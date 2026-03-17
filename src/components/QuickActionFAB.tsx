@@ -106,6 +106,7 @@ export const QuickActionFAB: React.FC = () => {
 };
 
 const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { t } = useSettings();
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
   const [prevValue, setPrevValue] = useState<number | null>(null);
@@ -190,7 +191,7 @@ const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div className="p-4 bg-gray-50">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-gray-700">Calculator</h3>
+        <h3 className="font-bold text-gray-700">{t('calculator')}</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           <X size={20} />
         </button>

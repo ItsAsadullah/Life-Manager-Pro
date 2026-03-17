@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { HandCoins } from 'lucide-react';
+import { useSettings } from '../contexts/SettingsContext';
 
 export const Preloader: React.FC = () => {
+  const { t } = useSettings();
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white">
       <motion.div
@@ -51,7 +53,7 @@ export const Preloader: React.FC = () => {
       </motion.div>
       
       <div className="absolute bottom-10 text-gray-400 text-[10px] font-bold tracking-widest uppercase">
-        Secure Financial Manager
+        {t('secureFinancialManager')}
       </div>
     </div>
   );

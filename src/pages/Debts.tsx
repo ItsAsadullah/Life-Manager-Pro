@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
@@ -167,23 +168,29 @@ export const Debts: React.FC = () => {
   };
 
   const handleDeleteRepayment = async (debtId: string, repaymentId: string) => {
-    if (!user || !window.confirm('Delete this payment record?')) return;
+    setRepaymentToDelete({ debtId, repaymentId });
+  };
+
+  const confirmDeleteRepayment = async () => {
+    if (!user || !repaymentToDelete) return;
+    const { debtId, repaymentId } = repaymentToDelete;
     try {
       const debt = debts.find(d => d.id === debtId);
-      const repaymentToDelete = debt?.repayments?.find(r => r.id === repaymentId);
+      const repaymentToDeleteObj = debt?.repayments?.find(r => r.id === repaymentId);
       
       await deleteDoc(doc(db, 'users', user.uid, 'debts', debtId, 'repayments', repaymentId));
       
       // Update parent debt to trigger onSnapshot listener and update totalPaid
-      if (debt && repaymentToDelete) {
+      if (debt && repaymentToDeleteObj) {
         const currentTotalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
-        const newTotalPaid = Math.max(0, currentTotalPaid - repaymentToDelete.amount);
+        const newTotalPaid = Math.max(0, currentTotalPaid - repaymentToDeleteObj.amount);
         await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { 
           totalPaid: newTotalPaid,
           status: newTotalPaid >= debt.amount ? 'paid' : 'pending',
           updatedAt: new Date().toISOString()
         });
       }
+      setRepaymentToDelete(null);
     } catch (error) {
       console.error('Error deleting repayment:', error);
     }
@@ -276,8 +283,8 @@ export const Debts: React.FC = () => {
         </div>
       </div>
 
-      {isAdding && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      {isAdding && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? 'Edit Record' : 'Add New Record'}</h3>
@@ -374,7 +381,8 @@ export const Debts: React.FC = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Desktop Table View */}
@@ -733,6 +741,55 @@ export const Debts: React.FC = () => {
           <h3 className="text-lg font-medium text-gray-900">No debt records</h3>
           <p className="text-gray-500 mt-1">Start by adding your first borrowed or lent record.</p>
         </div>
+      )}
+      {/* Delete Debt Confirmation Modal */}
+      {debtToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Record</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDebtToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteDebt}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Repayment Confirmation Modal */}
+      {repaymentToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Payment</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this payment record? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setRepaymentToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteRepayment}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

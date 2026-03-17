@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
@@ -36,6 +37,8 @@ export const MarketMemo: React.FC = () => {
   
   const [title, setTitle] = useState('');
   const [items, setItems] = useState<MemoItem[]>([]);
+  const [history, setHistory] = useState<MemoItem[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   
   // New item form state
   const [itemName, setItemName] = useState('');
@@ -53,6 +56,8 @@ export const MarketMemo: React.FC = () => {
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [sharingMemo, setSharingMemo] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [memoToDelete, setMemoToDelete] = useState<string | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -237,6 +242,28 @@ export const MarketMemo: React.FC = () => {
     return () => unsubscribe();
   }, [user]);
 
+  const updateItemsWithHistory = (newItems: MemoItem[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newItems);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setItems(newItems);
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setItems(history[historyIndex - 1]);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setItems(history[historyIndex + 1]);
+    }
+  };
+
   const handleAddItem = (e: React.FormEvent) => {
     e.preventDefault();
     setItemError('');
@@ -270,7 +297,7 @@ export const MarketMemo: React.FC = () => {
     };
     const newItems = [...items, newItem];
     newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
-    setItems(newItems);
+    updateItemsWithHistory(newItems);
     
     // Reset item form
     setItemName('');
@@ -306,7 +333,7 @@ export const MarketMemo: React.FC = () => {
         : item
     );
     newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
-    setItems(newItems);
+    updateItemsWithHistory(newItems);
     setInlineEditingId(null);
   };
 
@@ -316,7 +343,14 @@ export const MarketMemo: React.FC = () => {
   };
 
   const handleRemoveItem = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+    setItemToDelete(id);
+  };
+
+  const confirmRemoveItem = () => {
+    if (itemToDelete) {
+      updateItemsWithHistory(items.filter(item => item.id !== itemToDelete));
+      setItemToDelete(null);
+    }
   };
 
   const toggleItemCheck = (id: string) => {
@@ -324,7 +358,7 @@ export const MarketMemo: React.FC = () => {
       item.id === id ? { ...item, checked: !item.checked } : item
     );
     newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
-    setItems(newItems);
+    updateItemsWithHistory(newItems);
     playTick();
   };
 
@@ -338,6 +372,8 @@ export const MarketMemo: React.FC = () => {
     setEditingMemoExpenseId(null);
     setTitle('');
     setItems([]);
+    setHistory([]);
+    setHistoryIndex(-1);
     setItemName('');
     setItemQuantity('');
     setItemUnitPrice('');
@@ -384,19 +420,36 @@ export const MarketMemo: React.FC = () => {
     }
   };
 
+  const handleNewMemo = () => {
+    setEditingMemoId(null);
+    setEditingMemoExpenseId(null);
+    setTitle('');
+    setItems([]);
+    setHistory([[]]);
+    setHistoryIndex(0);
+    setIsAdding(true);
+  };
+
   const handleEditMemo = (memo: any) => {
     setEditingMemoId(memo.id);
     setEditingMemoExpenseId(memo.expenseId || null);
     setTitle(memo.title);
     const sortedItems = [...(memo.items || [])].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
     setItems(sortedItems);
+    setHistory([sortedItems]);
+    setHistoryIndex(0);
     setIsAdding(true);
   };
 
   const handleDeleteMemo = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this memo?')) return;
+    setMemoToDelete(id);
+  };
+
+  const confirmDeleteMemo = async () => {
+    if (!memoToDelete || !user) return;
     try {
-      await deleteDoc(doc(db, 'users', user!.uid, 'marketMemos', id));
+      await deleteDoc(doc(db, 'users', user.uid, 'marketMemos', memoToDelete));
+      setMemoToDelete(null);
     } catch (error) {
       console.error('Error deleting memo:', error);
       alert('Failed to delete memo.');
@@ -437,7 +490,7 @@ export const MarketMemo: React.FC = () => {
           <p className="text-gray-600">Create digital bazaar lists and track costs</p>
         </div>
         <button
-          onClick={() => setIsAdding(true)}
+          onClick={handleNewMemo}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
           <Plus size={20} className="mr-2" />
@@ -445,15 +498,31 @@ export const MarketMemo: React.FC = () => {
         </button>
       </div>
 
-      {isAdding && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
+      {isAdding && createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-20">
             <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? 'Edit Market Memo' : 'Create Market Memo'}</h3>
             <div className="flex items-center gap-2">
               <button
+                onClick={handleUndo}
+                disabled={historyIndex <= 0}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+                title="Undo"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={historyIndex >= history.length - 1}
+                className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+                title="Redo"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
+              </button>
+              <button
                 onClick={handleSaveMemo}
                 disabled={items.length === 0 || !title.trim()}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm ml-2"
               >
                 <Save className="w-4 h-4" />
                 {editingMemoId ? 'Update' : 'Save'}
@@ -650,7 +719,8 @@ export const MarketMemo: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -791,8 +861,8 @@ export const MarketMemo: React.FC = () => {
       </div>
 
       {/* Share Modal */}
-      {sharingMemo && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      {sharingMemo && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative">
             <button 
               onClick={() => setSharingMemo(null)}
@@ -821,12 +891,13 @@ export const MarketMemo: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Success Modal */}
-      {successMessage && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      {successMessage && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center max-w-sm w-full relative">
             <button 
               onClick={() => setSuccessMessage(null)}
@@ -840,7 +911,58 @@ export const MarketMemo: React.FC = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Success!</h3>
             <p className="text-gray-600 text-center">{successMessage}</p>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Item</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveItem}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Memo Confirmation Modal */}
+      {memoToDelete && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Memo</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this entire memo? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setMemoToDelete(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteMemo}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

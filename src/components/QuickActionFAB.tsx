@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, DollarSign, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -84,8 +85,8 @@ export const QuickActionFAB: React.FC = () => {
 
       {/* Calculator Modal */}
       <AnimatePresence>
-        {showCalculator && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {showCalculator && createPortal(
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -94,7 +95,8 @@ export const QuickActionFAB: React.FC = () => {
             >
               <Calculator onClose={() => setShowCalculator(false)} />
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </>

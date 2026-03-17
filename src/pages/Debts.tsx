@@ -588,11 +588,13 @@ export const Debts: React.FC = () => {
 
                 <div className="flex items-center justify-between mt-4 gap-2">
                   <button 
-                    onClick={() => setExpandedId(isExpanded ? null : debt.id)}
-                    className="flex-1 flex items-center justify-center py-2 bg-gray-50 text-gray-600 rounded-lg text-xs font-medium"
+                    onClick={() => {
+                      setExpandedId(isExpanded ? null : debt.id);
+                      if (!isExpanded) setIsAddingRepayment(null);
+                    }}
+                    className="flex-1 flex items-center justify-center py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold"
                   >
-                    <History size={14} className="mr-1.5" />
-                    History {isExpanded ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
+                    {debt.type === 'borrowed' ? 'Repay' : 'Receive'} & History {isExpanded ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
                   </button>
                   <button 
                     onClick={() => handleEdit(debt)}

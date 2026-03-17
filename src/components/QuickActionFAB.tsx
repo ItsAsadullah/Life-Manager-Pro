@@ -1,0 +1,164 @@
+import React, { useState } from 'react';
+import { Plus, X, StickyNote, ShoppingCart, HandCoins, Receipt, Calculator as CalcIcon, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
+
+export const QuickActionFAB: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const navigate = useNavigate();
+
+  const actions = [
+    { icon: <StickyNote size={20} />, label: 'Quick Note', color: 'bg-blue-500', path: '/notes' },
+    { icon: <ShoppingCart size={20} />, label: 'Market Memo', color: 'bg-green-500', path: '/market-memo' },
+    { icon: <HandCoins size={20} />, label: 'Add Debt/Loan', color: 'bg-purple-500', path: '/debts' },
+    { icon: <Receipt size={20} />, label: 'Add Expense', color: 'bg-red-500', path: '/expenses' },
+    { icon: <DollarSign size={20} />, label: 'Add Income', color: 'bg-emerald-500', path: '/expenses' },
+    { icon: <CalcIcon size={20} />, label: 'Calculator', color: 'bg-orange-500', action: () => setShowCalculator(true) },
+  ];
+
+  const handleAction = (action: any) => {
+    setIsOpen(false);
+    if (action.path) {
+      navigate(action.path);
+    } else if (action.action) {
+      action.action();
+    }
+  };
+
+  return (
+    <>
+      <div className="fixed bottom-24 md:bottom-8 right-6 z-50">
+        <AnimatePresence>
+          {isOpen && (
+            <div className="flex flex-col-reverse items-end mb-4 space-y-reverse space-y-3">
+              {actions.map((action, index) => (
+                <motion.button
+                  key={action.label}
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, y: 20 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => handleAction(action)}
+                  className="flex items-center group"
+                >
+                  <span className="mr-3 px-2 py-1 bg-white text-gray-700 text-xs font-bold rounded-md shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {action.label}
+                  </span>
+                  <div className={`w-12 h-12 ${action.color} text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform`}>
+                    {action.icon}
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
+            isOpen ? 'bg-gray-800 rotate-45' : 'bg-indigo-600 hover:bg-indigo-700'
+          } text-white`}
+        >
+          <Plus size={32} />
+        </button>
+      </div>
+
+      {/* Calculator Modal */}
+      <AnimatePresence>
+        {showCalculator && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden"
+            >
+              <Calculator onClose={() => setShowCalculator(false)} />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+const Calculator: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [display, setDisplay] = useState('0');
+  const [equation, setEquation] = useState('');
+
+  const handleNumber = (num: string) => {
+    setDisplay(display === '0' ? num : display + num);
+  };
+
+  const handleOperator = (op: string) => {
+    setEquation(display + ' ' + op + ' ');
+    setDisplay('0');
+  };
+
+  const calculate = () => {
+    try {
+      const result = eval(equation + display);
+      setDisplay(String(result));
+      setEquation('');
+    } catch (e) {
+      setDisplay('Error');
+    }
+  };
+
+  const clear = () => {
+    setDisplay('0');
+    setEquation('');
+  };
+
+  const buttons = [
+    { label: 'C', action: clear, color: 'text-red-500' },
+    { label: '÷', action: () => handleOperator('/'), color: 'text-indigo-600' },
+    { label: '×', action: () => handleOperator('*'), color: 'text-indigo-600' },
+    { label: '⌫', action: () => setDisplay(display.length > 1 ? display.slice(0, -1) : '0'), color: 'text-gray-500' },
+    { label: '7', action: () => handleNumber('7') },
+    { label: '8', action: () => handleNumber('8') },
+    { label: '9', action: () => handleNumber('9') },
+    { label: '-', action: () => handleOperator('-'), color: 'text-indigo-600' },
+    { label: '4', action: () => handleNumber('4') },
+    { label: '5', action: () => handleNumber('5') },
+    { label: '6', action: () => handleNumber('6') },
+    { label: '+', action: () => handleOperator('+'), color: 'text-indigo-600' },
+    { label: '1', action: () => handleNumber('1') },
+    { label: '2', action: () => handleNumber('2') },
+    { label: '3', action: () => handleNumber('3') },
+    { label: '=', action: calculate, color: 'bg-indigo-600 text-white row-span-2' },
+    { label: '0', action: () => handleNumber('0'), className: 'col-span-2' },
+    { label: '.', action: () => handleNumber('.') },
+  ];
+
+  return (
+    <div className="p-4 bg-gray-50">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-700">Calculator</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X size={20} />
+        </button>
+      </div>
+      
+      <div className="bg-white p-4 rounded-xl mb-4 text-right shadow-inner border border-gray-100">
+        <div className="text-xs text-gray-400 h-4 mb-1">{equation}</div>
+        <div className="text-2xl font-bold text-gray-900 truncate">{display}</div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {buttons.map((btn, i) => (
+          <button
+            key={i}
+            onClick={btn.action}
+            className={`h-12 rounded-lg text-sm font-bold transition-all active:scale-95 ${
+              btn.color || 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-100'
+            } ${btn.className || ''}`}
+          >
+            {btn.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};

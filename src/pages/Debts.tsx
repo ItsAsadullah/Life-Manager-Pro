@@ -5,6 +5,7 @@ import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateD
 import { db } from '../lib/firebase';
 import { Plus, Save, X, Trash2, Edit2, CheckCircle, Clock, User, Phone, DollarSign, Calendar, History, ArrowDownCircle, ArrowUpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
 interface Repayment {
   id: string;
@@ -340,13 +341,13 @@ export const Debts: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amount (৳)</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                  <input
-                    type="number"
+                  <SwipeableNumberInput
                     required
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={setAmount}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="0.00"
+                    isPrice={true}
                   />
                 </div>
               </div>
@@ -486,12 +487,12 @@ export const Debts: React.FC = () => {
                             <div className="bg-white p-4 rounded-lg border border-gray-200 flex flex-wrap gap-3 items-end">
                               <div className="flex-1 min-w-[120px]">
                                 <label className="block text-[10px] uppercase text-gray-400 mb-1">Amount</label>
-                                <input 
-                                  type="number" 
+                                <SwipeableNumberInput 
                                   value={repaymentAmount}
-                                  onChange={(e) => setRepaymentAmount(e.target.value)}
+                                  onChange={setRepaymentAmount}
                                   className="w-full px-3 py-1.5 border rounded text-sm"
                                   placeholder="Amount"
+                                  isPrice={true}
                                 />
                               </div>
                               <div className="flex-1 min-w-[120px]">
@@ -661,12 +662,12 @@ export const Debts: React.FC = () => {
 
                   {isAddingRepayment === debt.id && (
                     <div className="bg-white p-4 rounded-xl shadow-sm space-y-3">
-                      <input 
-                        type="number" 
+                      <SwipeableNumberInput 
                         value={repaymentAmount}
-                        onChange={(e) => setRepaymentAmount(e.target.value)}
+                        onChange={setRepaymentAmount}
                         className="w-full px-3 py-2 border rounded-lg text-sm"
                         placeholder="Amount"
+                        isPrice={true}
                       />
                       <input 
                         type="date" 

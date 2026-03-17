@@ -3,10 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
+import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Check, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
+import { playTick } from '../utils/audio';
 
 interface MemoItem {
   id: string;
@@ -18,141 +20,12 @@ interface MemoItem {
   checked?: boolean;
 }
 
-const PRICE_SNAPS = [
-  0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 
-  120, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000, 
-  1200, 1500, 2000, 2500, 3000, 4000, 5000, 10000
-];
-
-interface SwipeableNumberInputProps {
-  value: string;
-  onChange: (val: string) => void;
-  placeholder?: string;
-  className?: string;
-  required?: boolean;
-  isPrice?: boolean;
-}
-
-let audioCtx: AudioContext | null = null;
-const playTick = () => {
-  try {
-    if (!audioCtx) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
-      }
-    }
-    if (audioCtx) {
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.05);
-    }
-  } catch (e) {
-    // ignore audio errors
-  }
-};
-
-const SwipeableNumberInput: React.FC<SwipeableNumberInputProps> = ({ value, onChange, placeholder, className, required, isPrice }) => {
-  const [startY, setStartY] = useState<number | null>(null);
-  const [startValue, setStartValue] = useState<number>(0);
-  const [startIndex, setStartIndex] = useState<number>(0);
-  const [lastTickValue, setLastTickValue] = useState<number>(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setStartY(e.touches[0].clientY);
-    const initialVal = Number(value) || 0;
-    setStartValue(initialVal);
-    setLastTickValue(initialVal);
-
-    if (isPrice) {
-      let closestIdx = 0;
-      let minDiff = Infinity;
-      PRICE_SNAPS.forEach((snap, idx) => {
-        if (Math.abs(snap - initialVal) < minDiff) {
-          minDiff = Math.abs(snap - initialVal);
-          closestIdx = idx;
-        }
-      });
-      setStartIndex(closestIdx);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (startY === null) return;
-    const currentY = e.touches[0].clientY;
-    const diff = startY - currentY; // positive if swiping up
-
-    let newValue = 0;
-
-    if (isPrice) {
-      const step = Math.floor(diff / 8); // High sensitivity
-      const newIdx = Math.max(0, Math.min(PRICE_SNAPS.length - 1, startIndex + step));
-      newValue = PRICE_SNAPS[newIdx];
-    } else {
-      const step = Math.floor(diff / 15);
-      newValue = Math.max(0, startValue + step);
-    }
-
-    if (newValue !== lastTickValue) {
-       onChange(String(newValue));
-       setLastTickValue(newValue);
-       
-       // Haptic feedback
-       if (navigator.vibrate) {
-         navigator.vibrate(10);
-       }
-       // Sound
-       playTick();
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setStartY(null);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value;
-    const b2e: Record<string, string> = {'০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'};
-    val = val.replace(/[০-৯]/g, m => b2e[m]);
-    val = val.replace(/[^0-9.]/g, '');
-    const parts = val.split('.');
-    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
-    onChange(val);
-  };
-
-  return (
-    <input
-      type="text"
-      inputMode="decimal"
-      value={value}
-      onChange={handleChange}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      placeholder={placeholder}
-      className={className}
-      required={required}
-      style={{ touchAction: 'none' }}
-    />
-  );
-};
-
 export const MarketMemo: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const [memos, setMemos] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [isAddItemVisible, setIsAddItemVisible] = useState(false);
 
   useEffect(() => {
     if (location.state?.openAddModal) {
@@ -395,7 +268,9 @@ export const MarketMemo: React.FC = () => {
       total: quantity * unitPrice,
       checked: false
     };
-    setItems([...items, newItem]);
+    const newItems = [...items, newItem];
+    newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+    setItems(newItems);
     
     // Reset item form
     setItemName('');
@@ -425,11 +300,13 @@ export const MarketMemo: React.FC = () => {
       alert("Please enter valid positive numbers for quantity and price");
       return;
     }
-    setItems(items.map(item => 
+    const newItems = items.map(item => 
       item.id === id 
         ? { ...item, name: inlineName, quantity: q, unit: inlineUnit, unitPrice: p, total: q * p }
         : item
-    ));
+    );
+    newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+    setItems(newItems);
     setInlineEditingId(null);
   };
 
@@ -443,9 +320,11 @@ export const MarketMemo: React.FC = () => {
   };
 
   const toggleItemCheck = (id: string) => {
-    setItems(items.map(item => 
+    const newItems = items.map(item => 
       item.id === id ? { ...item, checked: !item.checked } : item
-    ));
+    );
+    newItems.sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+    setItems(newItems);
     playTick();
   };
 
@@ -509,7 +388,8 @@ export const MarketMemo: React.FC = () => {
     setEditingMemoId(memo.id);
     setEditingMemoExpenseId(memo.expenseId || null);
     setTitle(memo.title);
-    setItems(memo.items || []);
+    const sortedItems = [...(memo.items || [])].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+    setItems(sortedItems);
     setIsAdding(true);
   };
 
@@ -566,12 +446,22 @@ export const MarketMemo: React.FC = () => {
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-gray-50 animate-in slide-in-from-bottom-4">
           <div className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-20">
             <h3 className="text-lg font-bold text-gray-800">{editingMemoId ? 'Edit Market Memo' : 'Create Market Memo'}</h3>
-            <button onClick={closeModal} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
-              <X size={24} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveMemo}
+                disabled={items.length === 0 || !title.trim()}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {editingMemoId ? 'Update' : 'Save'}
+              </button>
+              <button onClick={closeModal} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
@@ -587,62 +477,75 @@ export const MarketMemo: React.FC = () => {
                 />
               </div>
 
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-semibold text-gray-700">Add Item</h4>
-                  {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded">{itemError}</span>}
-                </div>
-                <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-                  <div className="sm:col-span-2 md:col-span-2">
-                    <input
-                      ref={nameInputRef}
-                      type="text"
-                      placeholder="Item Name"
-                      required
-                      value={itemName}
-                      onChange={(e) => setItemName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <SwipeableNumberInput
-                      placeholder="Qty"
-                      required
-                      value={itemQuantity}
-                      onChange={setItemQuantity}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                  </div>
-                  <div>
-                    <select
-                      value={itemUnit}
-                      onChange={(e) => setItemUnit(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      {units.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <SwipeableNumberInput
-                      placeholder="Unit Price (৳)"
-                      required
-                      value={itemUnitPrice}
-                      onChange={setItemUnitPrice}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      isPrice={true}
-                    />
-                  </div>
-                  <div className="sm:col-span-2 md:col-span-5 flex justify-end gap-2 mt-2">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2"
-                    >
-                      <Plus size={16} />
-                      যুক্ত করুন
-                    </button>
-                  </div>
-                </form>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Items</h3>
+                <button
+                  onClick={() => setIsAddItemVisible(!isAddItemVisible)}
+                  className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 text-sm font-medium transition-colors"
+                >
+                  {isAddItemVisible ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
+                  {isAddItemVisible ? 'Cancel' : 'Add new item'}
+                </button>
               </div>
+
+              {isAddItemVisible && (
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">Add Item</h4>
+                    {itemError && <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded">{itemError}</span>}
+                  </div>
+                  <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="sm:col-span-2 md:col-span-2">
+                      <input
+                        ref={nameInputRef}
+                        type="text"
+                        placeholder="Item Name"
+                        required
+                        value={itemName}
+                        onChange={(e) => setItemName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <SwipeableNumberInput
+                        placeholder="Qty"
+                        required
+                        value={itemQuantity}
+                        onChange={setItemQuantity}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <select
+                        value={itemUnit}
+                        onChange={(e) => setItemUnit(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      >
+                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <SwipeableNumberInput
+                        placeholder="Unit Price (৳)"
+                        required
+                        value={itemUnitPrice}
+                        onChange={setItemUnitPrice}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        isPrice={true}
+                      />
+                    </div>
+                    <div className="sm:col-span-2 md:col-span-5 flex justify-end gap-2 mt-2">
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2"
+                      >
+                        <Plus size={16} />
+                        যুক্ত করুন
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
 
               {items.length > 0 && (
                 <>
@@ -669,14 +572,15 @@ export const MarketMemo: React.FC = () => {
                     <table className="w-full text-sm text-left">
                       <thead className="bg-[#9b87f5] text-white">
                         <tr>
-                          <th className="px-3 py-3 font-medium">পণ্য</th>
+                          <th className="px-3 py-3 font-medium">বিবরণ</th>
                           <th className="px-3 py-3 font-medium text-center">পরিমাণ</th>
-                          <th className="px-3 py-3 font-medium text-right">মূল্য (৳)</th>
+                          <th className="px-3 py-3 font-medium text-right">দর</th>
+                          <th className="px-3 py-3 font-medium text-right">টাকার পরিমাণ</th>
                           <th className="px-3 py-3 w-10 text-center"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-indigo-100 bg-white">
-                        {items.map((item, index) => (
+                        {[...items].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1)).map((item, index) => (
                           inlineEditingId === item.id ? (
                             <tr key={item.id} className="bg-indigo-50">
                               <td className="px-2 py-2">
@@ -684,14 +588,17 @@ export const MarketMemo: React.FC = () => {
                               </td>
                               <td className="px-2 py-2">
                                 <div className="flex gap-1 justify-center">
-                                  <input type="number" min="0" step="any" value={inlineQty} onChange={e => setInlineQty(e.target.value)} className="w-12 px-1 py-1 text-sm border border-indigo-300 rounded text-center" />
+                                  <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-12 px-1 py-1 text-sm border border-indigo-300 rounded text-center" />
                                   <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 rounded p-0 bg-white">
                                     {units.map(u => <option key={u} value={u}>{u}</option>)}
                                   </select>
                                 </div>
                               </td>
                               <td className="px-2 py-2">
-                                <input type="number" min="0" step="any" value={inlinePrice} onChange={e => setInlinePrice(e.target.value)} className="w-16 px-1 py-1 text-sm border border-indigo-300 rounded text-right ml-auto block" />
+                                <SwipeableNumberInput value={inlinePrice} onChange={setInlinePrice} className="w-16 px-1 py-1 text-sm border border-indigo-300 rounded text-right ml-auto block" isPrice={true} />
+                              </td>
+                              <td className="px-2 py-2 text-right text-sm font-medium text-gray-900">
+                                {(Number(inlineQty) * Number(inlinePrice)).toLocaleString()}
                               </td>
                               <td className="px-2 py-2 text-center">
                                 <div className="flex flex-col gap-1 items-center">
@@ -714,7 +621,10 @@ export const MarketMemo: React.FC = () => {
                                 <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-700'}`}>{item.quantity} {item.unit}</span>
                               </td>
                               <td className="px-3 py-3 text-right" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
-                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.total}</span>
+                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.unitPrice}</span>
+                              </td>
+                              <td className="px-3 py-3 text-right" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
+                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900 font-medium'}`}>{item.total}</span>
                               </td>
                               <td className="px-3 py-3 text-center">
                                 <button 
@@ -738,19 +648,6 @@ export const MarketMemo: React.FC = () => {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-          
-          <div className="p-4 bg-white border-t sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <div className="max-w-4xl mx-auto flex justify-end">
-              <button
-                onClick={handleSaveMemo}
-                disabled={items.length === 0 || !title.trim()}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium w-full md:w-auto transition-colors disabled:opacity-50"
-              >
-                <Save className="w-5 h-5" />
-                {editingMemoId ? 'Update Memo' : 'Save Memo'}
-              </button>
             </div>
           </div>
         </div>
@@ -948,3 +845,5 @@ export const MarketMemo: React.FC = () => {
     </div>
   );
 };
+
+export default MarketMemo;

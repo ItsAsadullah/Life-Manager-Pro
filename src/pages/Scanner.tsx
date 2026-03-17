@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { Upload, FileText, CheckCircle, Loader2 } from 'lucide-react';
 import Tesseract from 'tesseract.js';
+import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
 export const Scanner: React.FC = () => {
   const { user } = useAuth();
@@ -150,12 +151,12 @@ export const Scanner: React.FC = () => {
             <div className="flex-1 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount (৳)</label>
-                <input
-                  type="number"
-                  value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value ? Number(e.target.value) : '')}
+                <SwipeableNumberInput
+                  value={String(totalAmount)}
+                  onChange={(val) => setTotalAmount(val ? Number(val) : '')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
+                  isPrice={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Edit if the auto-detected amount is incorrect.</p>
               </div>

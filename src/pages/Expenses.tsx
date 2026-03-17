@@ -146,7 +146,7 @@ export const Expenses: React.FC = () => {
 
       {isAdding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-lg font-bold">Add Transaction</h3>
               <button onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600">

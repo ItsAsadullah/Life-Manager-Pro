@@ -15,6 +15,7 @@ interface MemoItem {
   unit: string;
   unitPrice: number;
   total: number;
+  checked?: boolean;
 }
 
 const PRICE_SNAPS = [
@@ -168,7 +169,11 @@ export const MarketMemo: React.FC = () => {
   const [itemQuantity, setItemQuantity] = useState<string>('');
   const [itemUnit, setItemUnit] = useState('kg');
   const [itemUnitPrice, setItemUnitPrice] = useState<string>('');
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+  const [inlineName, setInlineName] = useState('');
+  const [inlineQty, setInlineQty] = useState('');
+  const [inlineUnit, setInlineUnit] = useState('kg');
+  const [inlinePrice, setInlinePrice] = useState('');
   const [itemError, setItemError] = useState('');
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
   const [editingMemoExpenseId, setEditingMemoExpenseId] = useState<string | null>(null);
@@ -381,35 +386,16 @@ export const MarketMemo: React.FC = () => {
       return;
     }
     
-    if (editingItemId) {
-      const updatedId = editingItemId;
-      setItems(items.map(item => 
-        item.id === updatedId 
-          ? { ...item, name: itemName, quantity, unit: itemUnit, unitPrice, total: quantity * unitPrice }
-          : item
-      ));
-      setEditingItemId(null);
-      
-      // Highlight and scroll to updated item
-      setHighlightedItemId(updatedId);
-      setTimeout(() => {
-        itemRefs.current[updatedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-      
-      setTimeout(() => {
-        setHighlightedItemId(null);
-      }, 3000); // Highlight for 3 seconds
-    } else {
-      const newItem: MemoItem = {
-        id: Date.now().toString(),
-        name: itemName,
-        quantity,
-        unit: itemUnit,
-        unitPrice,
-        total: quantity * unitPrice
-      };
-      setItems([...items, newItem]);
-    }
+    const newItem: MemoItem = {
+      id: Date.now().toString(),
+      name: itemName,
+      quantity,
+      unit: itemUnit,
+      unitPrice,
+      total: quantity * unitPrice,
+      checked: false
+    };
+    setItems([...items, newItem]);
     
     // Reset item form
     setItemName('');
@@ -418,26 +404,54 @@ export const MarketMemo: React.FC = () => {
     setItemError('');
   };
 
-  const handleEditItem = (item: MemoItem) => {
-    setEditingItemId(item.id);
-    setItemName(item.name);
-    setItemQuantity(String(item.quantity));
-    setItemUnit(item.unit);
-    setItemUnitPrice(String(item.unitPrice));
-    setItemError('');
+  const startInlineEdit = (item: MemoItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setInlineEditingId(item.id);
+    setInlineName(item.name);
+    setInlineQty(String(item.quantity));
+    setInlineUnit(item.unit);
+    setInlinePrice(String(item.unitPrice));
+  };
 
-    // Focus and scroll to input
-    setTimeout(() => {
-      nameInputRef.current?.focus();
-      nameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+  const saveInlineEdit = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const q = Number(inlineQty);
+    const p = Number(inlinePrice);
+    if (!inlineName.trim()) {
+      alert("Name cannot be empty");
+      return;
+    }
+    if (isNaN(q) || isNaN(p) || q <= 0 || p < 0) {
+      alert("Please enter valid positive numbers for quantity and price");
+      return;
+    }
+    setItems(items.map(item => 
+      item.id === id 
+        ? { ...item, name: inlineName, quantity: q, unit: inlineUnit, unitPrice: p, total: q * p }
+        : item
+    ));
+    setInlineEditingId(null);
+  };
+
+  const cancelInlineEdit = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setInlineEditingId(null);
   };
 
   const handleRemoveItem = (id: string) => {
     setItems(items.filter(item => item.id !== id));
   };
 
+  const toggleItemCheck = (id: string) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ));
+    playTick();
+  };
+
   const totalAmount = items.reduce((sum, item) => sum + item.total, 0);
+  const purchasedAmount = items.filter(item => item.checked).reduce((sum, item) => sum + item.total, 0);
+  const remainingAmount = totalAmount - purchasedAmount;
 
   const closeModal = () => {
     setIsAdding(false);
@@ -449,7 +463,7 @@ export const MarketMemo: React.FC = () => {
     setItemQuantity('');
     setItemUnitPrice('');
     setItemError('');
-    setEditingItemId(null);
+    setInlineEditingId(null);
   };
 
   const handleSaveMemo = async () => {
@@ -619,25 +633,12 @@ export const MarketMemo: React.FC = () => {
                     />
                   </div>
                   <div className="sm:col-span-2 md:col-span-5 flex justify-end gap-2 mt-2">
-                    {editingItemId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingItemId(null);
-                          setItemName('');
-                          setItemQuantity('');
-                          setItemUnitPrice('');
-                        }}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    )}
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-800"
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2"
                     >
-                      {editingItemId ? 'Update Item' : 'Add to List'}
+                      <Plus size={16} />
+                      যুক্ত করুন
                     </button>
                   </div>
                 </form>
@@ -645,82 +646,94 @@ export const MarketMemo: React.FC = () => {
 
               {items.length > 0 && (
                 <>
-                  {/* Desktop Table View */}
-                  <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Name</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {items.map((item) => (
-                          <tr 
-                            key={item.id} 
-                            ref={(el) => { itemRefs.current[item.id] = el; }}
-                            className={`transition-colors duration-700 ${highlightedItemId === item.id ? 'bg-green-100' : 'hover:bg-gray-50'}`}
-                          >
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.name}</td>
-                            <td className="px-4 py-3 text-sm text-gray-500 text-right">{item.quantity} {item.unit}</td>
-                            <td className="px-4 py-3 text-sm text-gray-500 text-right">৳{item.unitPrice}</td>
-                            <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">৳{item.total.toLocaleString()}</td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="flex justify-center gap-3">
-                                <button onClick={() => handleEditItem(item)} className="text-blue-600 hover:text-blue-800 transition-colors" title="Edit">
-                                  <Edit2 size={18} />
-                                </button>
-                                <button onClick={() => handleRemoveItem(item.id)} className="text-red-600 hover:text-red-800 transition-colors flex items-center gap-1" title="Remove">
-                                  <Trash2 size={18} />
-                                  <span className="hidden lg:inline text-xs font-medium">Remove</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="bg-gray-100">
-                        <tr>
-                          <td colSpan={3} className="px-4 py-4 text-right text-sm font-bold text-gray-900 uppercase tracking-wider">Grand Total:</td>
-                          <td className="px-4 py-4 text-right text-base font-bold text-indigo-700">৳{totalAmount.toLocaleString()}</td>
-                          <td></td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                  <div className="mb-4 bg-white border border-indigo-100 rounded-lg p-3 shadow-sm">
+                    <div className="flex justify-between text-sm mb-2">
+                      <div>
+                        <span className="text-gray-500">কেনা হয়েছে:</span>{' '}
+                        <span className="font-bold text-green-600">৳{purchasedAmount.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">বাকি আছে:</span>{' '}
+                        <span className="font-bold text-red-600">৳{remainingAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                        style={{ width: `${totalAmount > 0 ? (purchasedAmount / totalAmount) * 100 : 0}%` }}
+                      ></div>
+                    </div>
                   </div>
 
-                  {/* Mobile Card View */}
-                  <div className="md:hidden space-y-3">
-                    {items.map((item) => (
-                      <div 
-                        key={item.id} 
-                        ref={(el) => { itemRefs.current[item.id] = el; }}
-                        className={`border rounded-lg p-4 shadow-sm transition-colors duration-700 ${highlightedItemId === item.id ? 'bg-green-100 border-green-300' : 'bg-white border-gray-200'}`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-bold text-gray-900 text-base">{item.name}</span>
-                          <span className="font-bold text-indigo-600 text-base">৳{item.total.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-500 mb-4">
-                          <span>{item.quantity} {item.unit}</span>
-                          <span>@ ৳{item.unitPrice}/{item.unit}</span>
-                        </div>
-                        <div className="flex justify-end gap-4 pt-3 border-t border-gray-100">
-                          <button onClick={() => handleEditItem(item)} className="text-blue-600 hover:text-blue-800 flex items-center gap-1.5 text-sm font-medium transition-colors">
-                            <Edit2 size={16} /> Edit
-                          </button>
-                          <button onClick={() => handleRemoveItem(item.id)} className="text-red-600 hover:text-red-800 flex items-center gap-1.5 text-sm font-medium transition-colors">
-                            <Trash2 size={16} /> Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex justify-between items-center shadow-sm mt-4">
-                      <span className="font-bold text-indigo-900 uppercase tracking-wider text-sm">Grand Total</span>
-                      <span className="font-bold text-indigo-700 text-xl">৳{totalAmount.toLocaleString()}</span>
+                  <div className="border border-indigo-200 rounded-lg overflow-hidden shadow-sm">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-[#9b87f5] text-white">
+                        <tr>
+                          <th className="px-3 py-3 font-medium">পণ্য</th>
+                          <th className="px-3 py-3 font-medium text-center">পরিমাণ</th>
+                          <th className="px-3 py-3 font-medium text-right">মূল্য (৳)</th>
+                          <th className="px-3 py-3 w-10 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-indigo-100 bg-white">
+                        {items.map((item, index) => (
+                          inlineEditingId === item.id ? (
+                            <tr key={item.id} className="bg-indigo-50">
+                              <td className="px-2 py-2">
+                                <input type="text" value={inlineName} onChange={e => setInlineName(e.target.value)} className="w-full px-1 py-1 text-sm border border-indigo-300 rounded" />
+                              </td>
+                              <td className="px-2 py-2">
+                                <div className="flex gap-1 justify-center">
+                                  <input type="number" min="0" step="any" value={inlineQty} onChange={e => setInlineQty(e.target.value)} className="w-12 px-1 py-1 text-sm border border-indigo-300 rounded text-center" />
+                                  <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 rounded p-0 bg-white">
+                                    {units.map(u => <option key={u} value={u}>{u}</option>)}
+                                  </select>
+                                </div>
+                              </td>
+                              <td className="px-2 py-2">
+                                <input type="number" min="0" step="any" value={inlinePrice} onChange={e => setInlinePrice(e.target.value)} className="w-16 px-1 py-1 text-sm border border-indigo-300 rounded text-right ml-auto block" />
+                              </td>
+                              <td className="px-2 py-2 text-center">
+                                <div className="flex flex-col gap-1 items-center">
+                                  <button onClick={(e) => saveInlineEdit(item.id, e)} className="text-green-600 bg-green-100 hover:bg-green-200 p-1 rounded transition-colors"><Check size={14}/></button>
+                                  <button onClick={cancelInlineEdit} className="text-red-600 bg-red-100 hover:bg-red-200 p-1 rounded transition-colors"><X size={14}/></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            <tr 
+                              key={item.id} 
+                              ref={(el) => { itemRefs.current[item.id] = el; }}
+                              onClick={() => toggleItemCheck(item.id)}
+                              className={`cursor-pointer transition-colors ${index % 2 === 0 ? 'bg-indigo-50/30' : 'bg-white'} ${item.checked ? 'opacity-50' : ''} ${highlightedItemId === item.id ? 'bg-green-100' : ''}`}
+                            >
+                              <td className="px-3 py-3">
+                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.name}</span>
+                              </td>
+                              <td className="px-3 py-3 text-center" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
+                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-700'}`}>{item.quantity} {item.unit}</span>
+                              </td>
+                              <td className="px-3 py-3 text-right" onClick={(e) => { e.stopPropagation(); startInlineEdit(item, e); }}>
+                                <span className={`${item.checked ? 'line-through text-gray-500' : 'text-gray-900'}`}>{item.total}</span>
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleRemoveItem(item.id); }} 
+                                  className="text-indigo-500 hover:text-red-500 bg-indigo-100 hover:bg-red-100 p-1.5 rounded transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        ))}
+                      </tbody>
+                    </table>
+                    
+                    {/* Footer Summary */}
+                    <div className="bg-[#9b87f5] text-white px-4 py-3 flex justify-between items-center text-sm font-medium">
+                      <span>মোট পণ্য: {items.length} টি</span>
+                      <span>মোট মূল্য: {totalAmount.toLocaleString()} ৳</span>
                     </div>
                   </div>
                 </>
@@ -793,6 +806,22 @@ export const MarketMemo: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-gray-100">
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500">Purchased</span>
+                  <span className="text-green-600 font-bold">৳{(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500">Remaining</span>
+                  <span className="text-red-600 font-bold">৳{(memo.totalAmount - (memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0)).toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-indigo-600 h-full transition-all duration-500" 
+                    style={{ width: `${(memo.items?.filter((i: any) => i.checked).reduce((s: number, i: any) => s + i.total, 0) || 0) / memo.totalAmount * 100}%` }}
+                  ></div>
+                </div>
+              </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm font-medium text-gray-500">Total Amount</span>
                 <span className="text-lg font-bold text-indigo-600">৳{memo.totalAmount.toLocaleString()}</span>

@@ -101,12 +101,14 @@ service cloud.firestore {
     }
 
     function isValidMarketMemo(data) {
-      return hasOnlyAllowedFields(['title', 'items', 'totalAmount', 'createdAt']) &&
+      return hasOnlyAllowedFields(['title', 'items', 'totalAmount', 'createdAt', 'updatedAt', 'expenseId']) &&
              isValidString(data.title, 1, 200) &&
              data.items is list &&
              data.items.size() <= 100 &&
              isValidNumber(data.totalAmount, 0, 1000000000) &&
-             (!('createdAt' in data) || isValidDateString(data.createdAt));
+             (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
+             (!('updatedAt' in data) || isValidDateString(data.updatedAt)) &&
+             (!('expenseId' in data) || isValidString(data.expenseId, 1, 100));
     }
 
     // ===============================================================

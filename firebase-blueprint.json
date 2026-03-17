@@ -117,7 +117,9 @@
           }
         },
         "totalAmount": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "expenseId": { "type": "string" }
       },
       "required": ["title", "items", "totalAmount", "createdAt"]
     }

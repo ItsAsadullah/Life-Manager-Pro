@@ -78,9 +78,13 @@ service cloud.firestore {
     }
 
     function isValidDebt(data) {
-      return hasOnlyAllowedFields(['personName', 'phoneNumber', 'amount', 'type', 'dueDate', 'status', 'totalPaid', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields(['personName', 'phoneNumber', 'address', 'imageUrl', 'accountId', 'date', 'amount', 'type', 'dueDate', 'status', 'totalPaid', 'createdAt', 'updatedAt']) &&
              isValidString(data.personName, 1, 100) &&
              (!('phoneNumber' in data) || isValidString(data.phoneNumber, 0, 20)) &&
+             (!('address' in data) || isValidString(data.address, 0, 200)) &&
+             (!('imageUrl' in data) || isValidString(data.imageUrl, 0, 1000000)) &&
+             (!('accountId' in data) || isValidString(data.accountId, 0, 50)) &&
+             (!('date' in data) || data.date == null || data.date is string) &&
              isValidNumber(data.amount, 0, 1000000000) &&
              (!('totalPaid' in data) || isValidNumber(data.totalPaid, 0, 1000000000)) &&
              data.type in ['borrowed', 'lent'] &&
@@ -173,9 +177,9 @@ service cloud.firestore {
 
         match /repayments/{repaymentId} {
           allow read: if isOwner(userId);
-          allow create: if isOwner(userId) && hasOnlyAllowedFields(['amount', 'date', 'note', 'createdAt']) &&
-                        isValidNumber(request.resource.data.amount, 0, 1000000000) &&
-                        isValidDateString(request.resource.data.date) &&
+          allow create: if isOwner(userId) && hasOnlyAllowedFields(['amount', 'type', 'date', 'note', 'createdAt']) &&
+                        isValidNumber(request.resource.data.amount, 0, 1000000000) && (!('type' in request.resource.data) || request.resource.data.type in ['got', 'gave']) &&
+                        (request.resource.data.date == null || request.resource.data.date is string) &&
                         (!('note' in request.resource.data) || isValidString(request.resource.data.note, 0, 500)) &&
                         isValidDateString(request.resource.data.createdAt);
           allow update, delete: if isOwner(userId);

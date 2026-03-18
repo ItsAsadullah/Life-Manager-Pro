@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { collection, query, onSnapshot, orderBy, addDoc, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useLocation } from 'react-router-dom';
-import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Save, X, Trash2, Edit2, CheckCircle, Clock, User, Phone, DollarSign, Calendar, History, ArrowDownCircle, ArrowUpCircle, ChevronDown, ChevronUp, HandCoins } from 'lucide-react';
-import { format } from 'date-fns';
-import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
+import { 
+  ArrowDownCircle, ArrowUpCircle, UserRound, Phone, MapPin, 
+  Calendar, Wallet, ImagePlus, X, MoreVertical, Search, 
+  ArrowLeft, FileText, ArrowDownLeft, ArrowUpRight, Check, Plus
+} from 'lucide-react';
 
 interface Repayment {
   id: string;
   amount: number;
+  type: 'got' | 'gave';
   date: string;
   note?: string;
   createdAt: string;
@@ -21,790 +24,684 @@ interface Debt {
   id: string;
   personName: string;
   phoneNumber?: string;
+  address?: string;
+  imageUrl?: string;
+  accountId?: string;
+  date?: string;
   amount: number;
-  type: 'borrowed' | 'lent';
-  dueDate?: string;
-  status: 'pending' | 'paid';
+  type: 'borrowed' | 'lent'; // borrowed = dibo (I owe), lent = pabo (They owe)
   createdAt: string;
-  updatedAt?: string;
-  totalPaid?: number;
-  repayments?: Repayment[];
 }
 
 export const Debts: React.FC = () => {
   const { user } = useAuth();
   const { t, currencySymbol } = useSettings();
-  const location = useLocation();
+  
   const [debts, setDebts] = useState<Debt[]>([]);
-  const [isAdding, setIsAdding] = useState(false);
-
+  
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+const [searchQuery, setSearchQuery] = useState('');
+  
+  const location = useLocation();
+  
   useEffect(() => {
+    const handleClickOutside = () => setActiveMenuId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
+useEffect(() => {
     if (location.state?.openAddModal) {
-      setIsAdding(true);
+      setShowAddPerson(true);
       window.history.replaceState({}, document.title);
     }
   }, [location]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  
+  // Navigation State
+  const [selectedPerson, setSelectedPerson] = useState<Debt | null>(null);
 
-  // Repayment state
-  const [isAddingRepayment, setIsAddingRepayment] = useState<string | null>(null);
-  const [repaymentAmount, setRepaymentAmount] = useState('');
-  const [repaymentDate, setRepaymentDate] = useState(new Date().toISOString().split('T')[0]);
-  const [repaymentNote, setRepaymentNote] = useState('');
-  const [debtToDelete, setDebtToDelete] = useState<string | null>(null);
-  const [repaymentToDelete, setRepaymentToDelete] = useState<{debtId: string, repaymentId: string} | null>(null);
-
-  // Form state
+  // Add Person Modal States
+  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
+  const [showAddPerson, setShowAddPerson] = useState(false);
   const [personName, setPersonName] = useState('');
+  const [personAddress, setPersonAddress] = useState('');
+  const [personImage, setPersonImage] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [amount, setAmount] = useState('');
-  const [type, setType] = useState<'borrowed' | 'lent'>('borrowed');
-  const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<'pending' | 'paid'>('pending');
+  const [personDate, setPersonDate] = useState(new Date().toISOString().split('T')[0]);
+  const [personAccount, setPersonAccount] = useState('ক্যাশ');
+
+  // Add Transaction Modal States
+  const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [trxType, setTrxType] = useState<'got' | 'gave'>('gave');
+  const [trxAmount, setTrxAmount] = useState('');
+  const [trxNote, setTrxNote] = useState('');
+  const [trxDate, setTrxDate] = useState(new Date().toISOString().split('T')[0]);
+  const [trxAccount, setTrxAccount] = useState('ক্যাশ');
+  const [editingTrxId, setEditingTrxId] = useState<string | null>(null);
+
+  // Repayments for selected person
+  const [repayments, setRepayments] = useState<Repayment[]>([]);
 
   useEffect(() => {
     if (!user) return;
     const debtsRef = collection(db, 'users', user.uid, 'debts');
-    const q = query(debtsRef, orderBy('createdAt', 'desc'));
+    const q = query(debtsRef);
     
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const debtsData = await Promise.all(snapshot.docs.map(async (debtDoc) => {
-        const repaymentsRef = collection(db, 'users', user.uid!, 'debts', debtDoc.id, 'repayments');
-        const repaymentsSnap = await getDocs(query(repaymentsRef, orderBy('date', 'desc')));
-        const repayments = repaymentsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Repayment));
-        
-        return { 
-          id: debtDoc.id, 
-          ...debtDoc.data(),
-          repayments 
-        } as Debt;
-      }));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const debtsData: Debt[] = [];
+      snapshot.forEach((doc) => {
+        debtsData.push({ id: doc.id, ...doc.data() } as Debt);
+      });
+      debtsData.sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setDebts(debtsData);
       
-      setDebts(debtsData);
-      setLoading(false);
+      // Update selected person reference if it changes
+      if (selectedPerson) {
+        const updated = debtsData.find(d => d.id === selectedPerson.id);
+        if (updated) setSelectedPerson(updated);
+      }
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, selectedPerson?.id]);
 
-  const resetForm = () => {
-    setPersonName('');
-    setPhoneNumber('');
-    setAmount('');
-    setType('borrowed');
-    setDueDate('');
-    setStatus('pending');
-    setEditingId(null);
-    setIsAdding(false);
+  useEffect(() => {
+    if (!user || !selectedPerson) return;
+    const repaymentsRef = collection(db, 'users', user.uid, 'debts', selectedPerson.id, 'repayments');
+    const q = query(repaymentsRef);
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const repData: Repayment[] = [];
+      snapshot.forEach((doc) => {
+        const d = doc.data();
+        let derivedType = 'gave';
+        let derivedNote = d.note || '';
+        if (d.note && (d.note.startsWith('got|') || d.note.startsWith('gave|'))) {
+          const parts = d.note.split('|');
+          derivedType = parts[0];
+          derivedNote = parts.slice(1).join('|');
+        } else if (d.type) { 
+           derivedType = d.type; 
+        }
+        repData.push({ id: doc.id, ...d, type: derivedType, note: derivedNote } as Repayment);
+      });
+      repData.sort((a,b) => new Date(b.createdAt || b.date || 0).getTime() - new Date(a.createdAt || a.date || 0).getTime());
+        setRepayments(repData);
+    });
+
+    return () => unsubscribe();
+    }, [user, selectedPerson?.id]);
+  // Aggregate Stats
+  const { totalPabo, totalDibo } = useMemo(() => {
+    let p = 0;
+    let d = 0;
+    debts.forEach(debt => {
+      if (debt.type === 'lent') p += debt.amount;
+      if (debt.type === 'borrowed') d += debt.amount;
+    });
+    return { totalPabo: p, totalDibo: d };
+  }, [debts]);
+
+  const filteredDebts = debts.filter(d => 
+    d.personName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (d.phoneNumber && d.phoneNumber.includes(searchQuery))
+  );
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let width = img.width;
+          let height = img.height;
+          if (width > height && width > maxDim) {
+            height *= maxDim / width;
+            width = maxDim;
+          } else if (height > maxDim) {
+            width *= maxDim / height;
+            height = maxDim;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          setPersonImage(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !personName.trim() || !amount) return;
 
-    const debtData = {
-      personName,
-      phoneNumber,
-      amount: Number(amount),
-      type,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-      status,
-      totalPaid: 0,
-      updatedAt: new Date().toISOString()
-    };
+  const handleSavePerson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !personName.trim()) return;
 
     try {
-      if (editingId) {
-        await updateDoc(doc(db, 'users', user.uid, 'debts', editingId), debtData);
+      if (editingPersonId) {
+        await updateDoc(doc(db, 'users', user.uid, 'debts', editingPersonId), {
+          personName,
+          phoneNumber,
+          updatedAt: new Date().toISOString()
+        });
+        
+        // Update selectedPerson if it is currently open
+        if (selectedPerson && selectedPerson.id === editingPersonId) {
+            setSelectedPerson({
+                ...selectedPerson,
+                personName,
+                phoneNumber,
+                address: personAddress,
+                imageUrl: personImage,
+                accountId: personAccount,
+                date: new Date(personDate).toISOString(),
+            });
+        }
       } else {
         await addDoc(collection(db, 'users', user.uid, 'debts'), {
-          ...debtData,
-          createdAt: new Date().toISOString()
-        });
+            personName,
+            phoneNumber,
+            amount: 0,
+            type: 'lent',
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
       }
-      resetForm();
+      setShowAddPerson(false);
+      setEditingPersonId(null);
+      setPersonName('');
+      setPhoneNumber('');
+      setPersonAddress('');
+      setPersonImage('');
     } catch (error) {
-      console.error('Error saving debt:', error);
+      console.error('Error saving person:', error);
     }
   };
 
-  const handleAddRepayment = async (debtId: string) => {
-    if (!user) return;
-    if (!repaymentAmount) {
-      return;
-    }
-    
+  const syncPersonBalance = async (personId: string) => {
+    if(!user) return;
     try {
-      const repaymentData = {
-        amount: Number(repaymentAmount),
-        date: new Date(repaymentDate).toISOString(),
-        note: repaymentNote,
-        createdAt: new Date().toISOString()
-      };
+      const snap = await getDocs(collection(db, 'users', user.uid, 'debts', personId, 'repayments'));
+      let net = 0;
+      snap.docs.forEach(doc => {
+        const d = doc.data();
+        let t = 'gave';
+        if (d.note && (d.note.startsWith('got|') || d.note.startsWith('gave|'))) { t = d.note.split('|')[0]; }
+        else if (d.type) { t = d.type; }
+        
+        let amt = Number(d.amount) || 0;
+        if(t === 'gave') net += amt;
+        else net -= amt;
+      });
       
-      await addDoc(collection(db, 'users', user.uid, 'debts', debtId, 'repayments'), repaymentData);
-      
-      // Update parent debt to trigger onSnapshot listener and update totalPaid
-      const debt = debts.find(d => d.id === debtId);
-      if (debt) {
-        const currentTotalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
-        const newTotalPaid = currentTotalPaid + Number(repaymentAmount);
-        const newStatus = newTotalPaid >= debt.amount ? 'paid' : 'pending';
-        await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { 
-          status: newStatus,
-          totalPaid: newTotalPaid,
-          updatedAt: new Date().toISOString()
-        });
-      }
-      
-      setIsAddingRepayment(null);
-      setRepaymentAmount('');
-      setRepaymentNote('');
-    } catch (error) {
-      console.error('Error adding repayment:', error);
-    }
-  };
-
-  const handleDeleteRepayment = async (debtId: string, repaymentId: string) => {
-    setRepaymentToDelete({ debtId, repaymentId });
-  };
-
-  const confirmDeleteRepayment = async () => {
-    if (!user || !repaymentToDelete) return;
-    const { debtId, repaymentId } = repaymentToDelete;
-    try {
-      const debt = debts.find(d => d.id === debtId);
-      const repaymentToDeleteObj = debt?.repayments?.find(r => r.id === repaymentId);
-      
-      await deleteDoc(doc(db, 'users', user.uid, 'debts', debtId, 'repayments', repaymentId));
-      
-      // Update parent debt to trigger onSnapshot listener and update totalPaid
-      if (debt && repaymentToDeleteObj) {
-        const currentTotalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
-        const newTotalPaid = Math.max(0, currentTotalPaid - repaymentToDeleteObj.amount);
-        await updateDoc(doc(db, 'users', user.uid, 'debts', debtId), { 
-          totalPaid: newTotalPaid,
-          status: newTotalPaid >= debt.amount ? 'paid' : 'pending',
-          updatedAt: new Date().toISOString()
-        });
-      }
-      setRepaymentToDelete(null);
-    } catch (error) {
-      console.error('Error deleting repayment:', error);
-    }
-  };
-
-  const handleEdit = (debt: Debt) => {
-    setEditingId(debt.id);
-    setPersonName(debt.personName);
-    setPhoneNumber(debt.phoneNumber || '');
-    setAmount(String(debt.amount));
-    setType(debt.type);
-    setDueDate(debt.dueDate || '');
-    setStatus(debt.status);
-    setIsAdding(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    setDebtToDelete(id);
-  };
-
-  const confirmDeleteDebt = async () => {
-    if (!user || !debtToDelete) return;
-    try {
-      // Delete all subcollections (repayments) first
-      const repaymentsRef = collection(db, 'users', user.uid, 'debts', debtToDelete, 'repayments');
-      const repaymentsSnapshot = await getDocs(repaymentsRef);
-      
-      const deletePromises = repaymentsSnapshot.docs.map(doc => deleteDoc(doc.ref));
-      await Promise.all(deletePromises);
-      
-      // Then delete the main document
-      await deleteDoc(doc(db, 'users', user.uid, 'debts', debtToDelete));
-      setDebtToDelete(null);
-    } catch (error) {
-      console.error('Error deleting debt:', error);
-    }
-  };
-
-  const toggleStatus = async (debt: Debt) => {
-    if (!user) return;
-    const newStatus = debt.status === 'pending' ? 'paid' : 'pending';
-    try {
-      await updateDoc(doc(db, 'users', user.uid, 'debts', debt.id), {
-        status: newStatus,
+      const newType = net >= 0 ? 'lent' : 'borrowed';
+      await updateDoc(doc(db, 'users', user.uid, 'debts', personId), {
+        amount: Math.abs(net),
+        type: newType,
         updatedAt: new Date().toISOString()
       });
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
+    } catch(err) { console.error('Sync Error', err); }
   };
 
-  const totalBorrowed = debts
-    .filter(d => d.type === 'borrowed' && d.status === 'pending')
-    .reduce((sum, d) => {
-      const paid = d.totalPaid !== undefined ? d.totalPaid : (d.repayments?.reduce((s, r) => s + r.amount, 0) || 0);
-      return sum + (d.amount - paid);
-    }, 0);
-    
-  const totalLent = debts
-    .filter(d => d.type === 'lent' && d.status === 'pending')
-    .reduce((sum, d) => {
-      const paid = d.totalPaid !== undefined ? d.totalPaid : (d.repayments?.reduce((s, r) => s + r.amount, 0) || 0);
-      return sum + (d.amount - paid);
-    }, 0);
+  const handleSaveTransaction = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user || !selectedPerson || !trxAmount) return;
 
-  if (loading) return <div className="flex justify-center items-center h-64">{t('loading')}</div>;
+      const amountVal = parseFloat(trxAmount);
+      if (isNaN(amountVal) || amountVal <= 0) return;
 
-  return (
-    <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">{t('debts')}</h2>
-          <p className="text-gray-600">{t('trackMoneyOwed')}</p>
+      try {
+          if(editingTrxId) {
+              await updateDoc(doc(db, 'users', user.uid, 'debts', selectedPerson.id, 'repayments', editingTrxId), {
+                  amount: amountVal,
+                  date: new Date(trxDate).toISOString(),
+                  note: `${trxType}|${trxNote}`,
+                  updatedAt: new Date().toISOString()
+              });
+          } else {
+              await addDoc(collection(db, 'users', user.uid, 'debts', selectedPerson.id, 'repayments'), {
+                  amount: amountVal,
+                  date: new Date(trxDate).toISOString(),
+                  note: `${trxType}|${trxNote}`,
+                  createdAt: new Date().toISOString()
+              });
+          }
+          await syncPersonBalance(selectedPerson.id);
+          setShowAddTransaction(false);
+          setTrxAmount('');
+          setTrxNote('');
+          setEditingTrxId(null);
+      } catch (err) {
+          console.error('REPAYMENT ERROR:', err);
+      }
+    };
+
+  if (selectedPerson) {
+    // ==== Person Details View (Screenshot 3 & 4) ====
+    return createPortal(
+      <div className="fixed inset-0 z-[50] overflow-y-auto bg-gray-50 pb-20 dark:bg-gray-900 animate-in slide-in-from-right duration-200">
+        <div className="max-w-2xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="bg-white dark:bg-gray-800 px-4 py-4 flex items-center justify-between sticky top-0 z-10 border-b border-gray-100 dark:border-gray-700">
+          <button onClick={() => setSelectedPerson(null)} className="p-2 -ml-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white">ব্যক্তির বিবরণ</h1>
+          <button className="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+            <FileText size={24} />
+          </button>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="w-full md:w-auto flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+
+        <div className="p-4 space-y-4 max-w-2xl mx-auto">
+          {/* Person Header */}
+          <div className="flex items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center overflow-hidden border border-blue-100 dark:border-blue-800 text-blue-500 shadow-inner">
+              {selectedPerson.imageUrl ? (
+                <img src={selectedPerson.imageUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserRound size={32} strokeWidth={1.5} />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedPerson.personName}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {selectedPerson.date ? new Date(selectedPerson.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'No date'}
+              </p>
+            </div>
+          </div>
+
+          {/* Balance Card */}
+          {selectedPerson.amount > 0 && (
+            <div className={`p-4 rounded-xl shadow-sm border flex items-center justify-between ${selectedPerson.type === 'lent' ? 'bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-800/30 text-green-700 dark:text-green-400' : 'bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-800/30 text-red-700 dark:text-red-400'}`}>
+              <div className="flex items-center gap-2 font-bold">
+                {selectedPerson.type === 'lent' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                <span>{selectedPerson.type === 'lent' ? 'পাবো' : 'দিবো'}</span>
+              </div>
+              <div className="text-xl font-bold">
+                {currencySymbol} {selectedPerson.amount.toLocaleString()}
+              </div>
+            </div>
+          )}
+
+          {selectedPerson.amount === 0 && (
+             <div className="p-4 rounded-xl shadow-sm border bg-gray-50 border-gray-200 dark:bg-gray-800 text-gray-600 dark:border-gray-700 flex items-center justify-between">
+                <div className="font-bold flex items-center gap-2"><Check size={20}/> ব্যালেন্স সমান</div>
+                <div className="text-xl font-bold">৳ ০</div>
+             </div>
+          )}
+
+          {/* Transactions List */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {repayments.map(rep => (
+              <div key={rep.id} className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${rep.type === 'got' ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-800/30' : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${rep.type === 'got' ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'}`}>
+                    {rep.type === 'got' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{rep.type === 'got' ? 'পেলাম' : 'দিলাম'}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(rep.createdAt).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit' })}</p>
+                    {rep.note && <p className="text-xs text-gray-600 mt-0.5">{rep.note}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`font-bold text-lg ${rep.type === 'got' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {rep.amount.toLocaleString()}
+                  </span>
+                  <div className="relative" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                  <button 
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === rep.id ? null : rep.id);
+                      }}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                  {activeMenuId === rep.id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-[9999] animate-in fade-in zoom-in-95 duration-100">
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(null);
+                            setEditingTrxId(rep.id);
+                            setTrxAmount(rep.amount.toString());
+                            setTrxType(rep.type);
+                            setTrxNote(rep.note || '');
+                            if(rep.date) setTrxDate(rep.date.split('T')[0]);
+                            setShowAddTransaction(true);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                       এডিট
+                      </button>
+                      <button 
+                         onClick={async (e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(null);
+                          if(window.confirm('আপনি কি এই লেনদেন ডিলিট করতে চান?')) {
+                             try {
+                               await deleteDoc(doc(db, 'users', user!.uid, 'debts', selectedPerson.id, 'repayments', rep.id));
+                                 await syncPersonBalance(selectedPerson.id);
+                             } catch(err) { console.error(err) }
+                          }
+                        }} 
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                       ডিলেট
+                      </button>
+                    </div>
+                  )}
+                </div>
+                </div>
+              </div>
+            ))}
+            {repayments.length === 0 && (
+              <div className="text-center py-10 text-gray-500">কোনো লেনদেন পাওয়া যায়নি</div>
+            )}
+          </div>
+        </div>
+
+        {/* FAB for Transaction */}
+        <button 
+          onClick={() => { setEditingTrxId(null); setTrxAmount(''); setTrxNote(''); setTrxDate(new Date().toISOString().split('T')[0]); setShowAddTransaction(true); }}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition transform hover:scale-105 active:scale-95"
         >
-          <Plus size={20} className="mr-2" />
-          {t('addRecord')}
+          <Plus size={30} />
         </button>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-red-100 dark:border-red-900 flex items-center">
-          <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center mr-4">
-            <ArrowDownCircle className="text-red-600 dark:text-red-400" size={24} />
-          </div>
-          <div>
-            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('borrowed')}</h3>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{currencySymbol}{totalBorrowed.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-green-100 dark:border-green-900 flex items-center">
-          <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center mr-4">
-            <ArrowUpCircle className="text-green-600 dark:text-green-400" size={24} />
-          </div>
-          <div>
-            <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('lent')}</h3>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{currencySymbol}{totalLent.toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
-
-      {isAdding && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{editingId ? t('editRecord') : t('addNewRecord')}</h3>
-              <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <X size={24} />
+        {/* Add Transaction Modal */}
+        {showAddTransaction && createPortal(
+          <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 p-6 relative">
+              <button 
+                onClick={() => setShowAddTransaction(false)} 
+                className="absolute top-4 right-4 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition"
+              >
+                <X size={20} />
               </button>
+
+              <h2 className="text-xl font-bold text-center text-gray-800 dark:text-white mb-6 pt-2">লেনদেন অ্যাড করুন</h2>
+
+              <form onSubmit={handleSaveTransaction} className="space-y-4">
+                
+                {/* Got/Gave Segmented Control */}
+                <div className="flex p-1 bg-gray-100 dark:bg-gray-700 rounded-xl relative">
+                  <button
+                    type="button"
+                    onClick={() => setTrxType('got')}
+                    className={`flex-1 py-3 text-center text-sm font-bold rounded-lg transition-all ${trxType === 'got' ? 'bg-green-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-300'}`}
+                  >
+                    পেলাম
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrxType('gave')}
+                    className={`flex-1 py-3 text-center text-sm font-bold rounded-lg transition-all ${trxType === 'gave' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-300'}`}
+                  >
+                    দিলাম
+                  </button>
+                </div>
+
+                {/* Amount */}
+                <div className="relative border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">@</span>
+                  <input required type="number" step="any" value={trxAmount} onChange={e => setTrxAmount(e.target.value)} placeholder="টাকার পরিমাণ" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                </div>
+                
+                {/* Details */}
+                <div className="relative border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                  <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input type="text" value={trxNote} onChange={e => setTrxNote(e.target.value)} placeholder="বিবরণ (ঐচ্ছিক)" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                </div>
+
+                {/* Date */}
+                <div className="relative border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                    <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none" />
+                    <input type="date" value={trxDate} onChange={e => setTrxDate(e.target.value)} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none cursor-pointer" />
+                  </div>
+
+                {/* Account */}
+                <div className="relative border border-blue-200 dark:border-blue-900 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800 flex items-center h-[46px] shadow-sm">
+                  <Wallet size={18} className="absolute left-4 text-gray-500" />
+                  <select value={trxAccount} onChange={e => setTrxAccount(e.target.value)} className="w-full h-full appearance-none bg-transparent border-none pl-12 pr-10 text-sm font-medium text-gray-800 dark:text-white focus:ring-0 outline-none cursor-pointer">
+                     <option value="ক্যাশ">ক্যাশ</option>
+                     <option value="বিকাশ">বিকাশ</option>
+                     <option value="নগদ">নগদ</option>
+                     <option value="ব্যাংক">ব্যাংক একাউন্ট</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▼</div>
+                </div>
+
+                <div className="pt-2">
+                  <button type="submit" className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-base transition-colors shadow-md">
+                    সেভ
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>, document.body
+        )}
+        </div>
+      </div>, document.body
+    );
+  }
+
+
+  // ==== Main List View (Screenshot 2) ====
+  return (
+    <div className="min-h-screen pb-24 max-w-6xl mx-auto w-full sm:px-4 dark:text-white animate-in fade-in">
+
+      {/* Top Stats Banner */}
+      <div className="bg-white dark:bg-gray-800 px-4 py-3 border-b border-gray-100 dark:border-gray-700 mb-4 sticky top-0 z-10 pt-safe transition-colors">
+        <div className="flex items-center justify-between border border-gray-100 dark:border-gray-700 rounded-xl p-3 shadow-sm">
+          <div className="flex-1 text-center border-r border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-center gap-1 text-xs sm:text-xs text-green-600 font-bold mb-1">
+              <ArrowDownCircle size={14}/> পাবো
+            </div>
+            <div className="text-sm font-bold text-green-700 dark:text-green-500">{totalPabo}</div>
+          </div>
+          <div className="flex-1 text-center border-r border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-center gap-1 text-xs sm:text-xs text-red-600 font-bold mb-1">
+              <ArrowUpCircle size={14}/> দিবো
+            </div>
+            <div className="text-sm font-bold text-red-700 dark:text-red-500">{totalDibo}</div>
+          </div>
+          <div className="flex-1 text-center">
+            <div className="flex items-center justify-center gap-1 text-xs sm:text-xs text-blue-600 font-bold mb-1">
+              <UserRound size={14}/> মোট
+            </div>
+            <div className="text-sm font-bold text-blue-700 dark:text-blue-500">{debts.length} জন</div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mt-4 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="নাম বা ফোন নম্বর দিয়ে খুঁজুন..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-full py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow text-gray-700 dark:text-gray-200 shadow-inner"
+          />
+        </div>
+      </div>
+
+      {/* Persons List */}
+      <div className="px-4 pb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredDebts.map((debt) => (
+          <div
+            key={debt.id}
+            onClick={() => setSelectedPerson(debt)}
+            className="flex items-center p-3 sm:p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
+          >
+            <div className="w-12 h-12 rounded-full flex-shrink-0 bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 border border-blue-100 dark:border-blue-800/50 overflow-hidden shadow-inner">
+               {debt.imageUrl ? (
+                 <img src={debt.imageUrl} alt="" className="w-full h-full object-cover" />
+               ) : (
+                 <UserRound strokeWidth={1} size={24} />
+               )}
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setType('borrowed')}
-                  className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    type === 'borrowed' ? 'bg-white dark:bg-gray-600 text-red-600 dark:text-red-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                >
-                  {t('borrowed')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType('lent')}
-                  className={`py-2 text-sm font-medium rounded-md transition-all ${
-                    type === 'lent' ? 'bg-white dark:bg-gray-600 text-green-600 dark:text-green-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                >
-                  {t('lent')}
-                </button>
+            <div className="ml-4 flex-1">
+              <h3 className="font-semibold text-gray-800 dark:text-white text-base">{debt.personName}</h3>
+              {debt.phoneNumber && <p className="text-xs text-gray-500">{debt.phoneNumber}</p>}
+            </div>
+
+            <div className="flex items-center gap-3">
+               {debt.amount > 0 ? (
+                 <div className={`text-sm font-bold ${debt.type === 'lent' ? 'text-green-600' : 'text-red-500'}`}>
+                    {debt.amount}
+                 </div>
+               ) : (
+                 <div className="text-sm font-bold text-gray-400">০</div>
+               )}
+               {/* Dot Indicator */}
+               {debt.amount > 0 ? (
+                 <div className={`w-2 h-2 rounded-full shadow-sm ${debt.type === 'lent' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+               ) : (
+                 <div className="w-2 h-2 rounded-full shadow-sm bg-gray-300 dark:bg-gray-600"></div>
+               )}
+               <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <button 
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === debt.id ? null : debt.id);
+                      }}
+                    className="p-1 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                  
+                  {activeMenuId === debt.id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-[9999] animate-in fade-in zoom-in-95 duration-100">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(null);
+                          setEditingPersonId(debt.id);
+                          setPersonName(debt.personName);
+                          setPhoneNumber(debt.phoneNumber || '');
+                          setPersonAddress(debt.address || '');
+                          setPersonImage(debt.imageUrl || '');
+                          if(debt.date) setPersonDate(debt.date.split('T')[0]);
+                          if(debt.accountId) setPersonAccount(debt.accountId);
+                          setShowAddPerson(true);
+                        }} 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                      >
+                       এডিট
+                      </button>
+                      <button 
+                         onClick={async (e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(null);
+                          if(window.confirm('আপনি কি নিশ্চিত যে এটি ডিলিট করতে চান?')) {
+                             try {
+                               await deleteDoc(doc(db, 'users', user!.uid, 'debts', debt.id));
+                             } catch(err) { console.error(err) }
+                          }
+                        }} 
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                      >
+                       ডিলেট
+                      </button>
+                    </div>
+                  )}
+               </div>
+            </div>
+          </div>
+        ))}
+        {filteredDebts.length === 0 && (
+          <div className="text-center text-gray-500 py-10">
+             কোনো ব্যক্তি পাওয়া যায়নি
+          </div>
+        )}
+      </div>
+
+      {/* Main View FAB */}
+      <button 
+        onClick={() => { setEditingPersonId(null); setPersonName(''); setPhoneNumber(''); setPersonAddress(''); setPersonImage(''); setShowAddPerson(true); }}
+        className="fixed bottom-[80px] right-6 w-14 h-14 bg-teal-600 hover:bg-teal-700 text-white rounded-full flex items-center justify-center shadow-lg transition-transform transform active:scale-95 z-20"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* Add Person Modal */}
+      {showAddPerson && createPortal(
+        <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 p-6 relative">
+            <button onClick={() => { setShowAddPerson(false); setEditingPersonId(null); }} className="absolute top-4 right-4 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition">
+              <X size={20} />
+            </button>
+
+            <form onSubmit={handleSavePerson} className="space-y-4 mt-2">
+              {/* Image Upload UI */}
+              <div className="flex justify-center mb-6 relative">
+                <label className="relative cursor-pointer w-24 h-24 rounded-full border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center overflow-hidden group shadow-sm">
+                  {personImage ? (
+                    <img src={personImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-blue-500 text-center flex flex-col items-center">
+                      <ImagePlus size={32} strokeWidth={1.5} />
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('personName')}</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={18} />
-                  <input
-                    type="text"
-                    required
-                    value={personName}
-                    onChange={(e) => setPersonName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder={t('enterName')}
-                  />
+              {/* Name */}
+              <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                <UserRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input required type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder="নাম" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+              </div>
+              
+              {/* Mobile */}
+              <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="ফোন নম্বর (ঐচ্ছিক)" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+              </div>
+
+              {/* Address */}
+              <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input type="text" value={personAddress} onChange={e => setPersonAddress(e.target.value)} placeholder="ঠিকানা (ঐচ্ছিক)" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+              </div>
+
+              {/* Date */}
+              <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none" />
+                  <input type="date" value={personDate} onChange={e => setPersonDate(e.target.value)} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none cursor-pointer" />
                 </div>
+
+              {/* Account Dropdown */}
+              <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800 flex items-center h-[46px]">
+                <Wallet size={18} className="absolute left-4 text-gray-500" />
+                <select value={personAccount} onChange={e => setPersonAccount(e.target.value)} className="w-full h-full appearance-none bg-transparent border-none pl-12 pr-10 text-sm font-medium text-gray-800 dark:text-white focus:ring-0 outline-none cursor-pointer">
+                   <option value="ক্যাশ">ক্যাশ</option>
+                   <option value="বিকাশ">বিকাশ</option>
+                   <option value="নগদ">নগদ</option>
+                   <option value="ব্যাংক">ব্যাংক একাউন্ট</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▼</div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('phoneNumberOptional')}</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={18} />
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder={t('enterPhoneNumber')}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('amount')} ({currencySymbol})</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={18} />
-                  <SwipeableNumberInput
-                    required
-                    value={amount}
-                    onChange={setAmount}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="0.00"
-                    isPrice={true}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('dueDateOptional')}</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={18} />
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
-              >
-                <Save size={20} className="mr-2" />
-                {editingId ? t('updateRecord') : t('saveRecord')}
+              <button type="submit" className="w-full py-3.5 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-base transition-colors shadow-sm">
+                সেভ করুন
               </button>
             </form>
           </div>
-        </div>,
-        document.body
+        </div>, document.body
       )}
 
-      {/* Desktop Table View */}
-      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('person')}</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('type')}</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('amount')}</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('dueDate')}</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('status')}</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('actions')}</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {debts.map((debt) => {
-              const totalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
-              const remaining = debt.amount - totalPaid;
-              
-              return (
-                <React.Fragment key={debt.id}>
-                  <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                          debt.type === 'borrowed' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                        }`}>
-                          <User size={16} />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{debt.personName}</div>
-                          {debt.phoneNumber && <div className="text-xs text-gray-500 dark:text-gray-400">{debt.phoneNumber}</div>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        debt.type === 'borrowed' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      }`}>
-                        {debt.type === 'borrowed' ? t('borrowed') : t('lent')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className={`text-sm font-bold ${
-                        debt.type === 'borrowed' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
-                      }`}>
-                        {currencySymbol}{debt.amount.toLocaleString()}
-                      </div>
-                      {totalPaid > 0 && (
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500">
-                          {t('paidAmount')}: {currencySymbol}{totalPaid.toLocaleString()} | {t('remainingAmount')}: {currencySymbol}{remaining.toLocaleString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Clock size={14} className="mr-1" />
-                        {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : t('noDate')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => toggleStatus(debt)}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                          debt.status === 'paid' 
-                            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300' 
-                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-                        }`}
-                      >
-                        {debt.status === 'paid' ? (
-                          <><CheckCircle size={12} className="mr-1" /> {t('paid')}</>
-                        ) : (
-                          <><Clock size={12} className="mr-1" /> {t('pending')}</>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-3">
-                        <button 
-                          onClick={() => setExpandedId(expandedId === debt.id ? null : debt.id)}
-                          className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400"
-                        >
-                          <History size={18} />
-                        </button>
-                        <button onClick={() => handleEdit(debt)} className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
-                          <Edit2 size={18} />
-                        </button>
-                        <button onClick={() => handleDelete(debt.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedId === debt.id && (
-                    <tr className="bg-gray-50 dark:bg-gray-900">
-                      <td colSpan={6} className="px-6 py-4">
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('repaymentHistory')}</h4>
-                            <button 
-                              onClick={() => setIsAddingRepayment(debt.id)}
-                              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center"
-                            >
-                              <Plus size={14} className="mr-1" /> {t('addPayment')}
-                            </button>
-                          </div>
-                          
-                          {isAddingRepayment === debt.id && (
-                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-wrap gap-3 items-end">
-                              <div className="flex-1 min-w-[120px]">
-                                <label className="block text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1">{t('amount')}</label>
-                                <SwipeableNumberInput 
-                                  value={repaymentAmount}
-                                  onChange={setRepaymentAmount}
-                                  className="w-full px-3 py-1.5 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded text-sm text-gray-900 dark:text-white"
-                                  placeholder={t('amount')}
-                                  isPrice={true}
-                                />
-                              </div>
-                              <div className="flex-1 min-w-[120px]">
-                                <label className="block text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1">{t('date')}</label>
-                                <input 
-                                  type="date" 
-                                  value={repaymentDate}
-                                  onChange={(e) => setRepaymentDate(e.target.value)}
-                                  className="w-full px-3 py-1.5 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded text-sm text-gray-900 dark:text-white"
-                                />
-                              </div>
-                              <div className="flex-[2] min-w-[200px]">
-                                <label className="block text-[10px] uppercase text-gray-400 dark:text-gray-500 mb-1">{t('note')}</label>
-                                <input 
-                                  type="text" 
-                                  value={repaymentNote}
-                                  onChange={(e) => setRepaymentNote(e.target.value)}
-                                  className="w-full px-3 py-1.5 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded text-sm text-gray-900 dark:text-white"
-                                  placeholder={t('optionalNote')}
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <button 
-                                  onClick={() => handleAddRepayment(debt.id)}
-                                  className="bg-indigo-600 text-white px-4 py-1.5 rounded text-sm font-medium"
-                                >
-                                  {t('add')}
-                                </button>
-                                <button 
-                                  onClick={() => setIsAddingRepayment(null)}
-                                  className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-1.5 rounded text-sm font-medium"
-                                >
-                                  {t('cancel')}
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            {debt.repayments?.map(repayment => (
-                              <div key={repayment.id} className="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
-                                <div className="flex items-center">
-                                  <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
-                                    <DollarSign size={14} className="text-indigo-600 dark:text-indigo-400" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">{currencySymbol}{repayment.amount.toLocaleString()}</div>
-                                    <div className="text-xs text-gray-400 dark:text-gray-500">{format(new Date(repayment.date), 'MMM d, yyyy')} {repayment.note && `• ${repayment.note}`}</div>
-                                  </div>
-                                </div>
-                                <button 
-                                  onClick={() => handleDeleteRepayment(debt.id, repayment.id)}
-                                  className="text-gray-300 dark:text-gray-600 hover:text-red-600 dark:hover:text-red-400"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            ))}
-                            {(!debt.repayments || debt.repayments.length === 0) && (
-                              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">{t('noPaymentHistory')}</p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
-        {debts.map((debt) => {
-          const totalPaid = debt.totalPaid !== undefined ? debt.totalPaid : (debt.repayments?.reduce((sum, r) => sum + r.amount, 0) || 0);
-          const remaining = debt.amount - totalPaid;
-          const isExpanded = expandedId === debt.id;
-
-          return (
-            <div key={debt.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                      debt.type === 'borrowed' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                    }`}>
-                      <User size={20} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">{debt.personName}</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{debt.phoneNumber || t('noPhone')}</p>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${
-                    debt.type === 'borrowed' ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                  }`}>
-                    {debt.type === 'borrowed' ? t('borrowed') : t('lent')}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">{t('totalAmount')}</p>
-                    <p className={`text-lg font-bold ${debt.type === 'borrowed' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                      {currencySymbol}{debt.amount.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">{t('remaining')}</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{currencySymbol}{remaining.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-gray-50 dark:border-gray-700">
-                  <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <Calendar size={14} className="mr-1" />
-                    {debt.dueDate ? format(new Date(debt.dueDate), 'MMM d, yyyy') : t('noDueDate')}
-                  </div>
-                  <button
-                    onClick={() => toggleStatus(debt)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                      debt.status === 'paid' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                    }`}
-                  >
-                    {debt.status === 'paid' ? t('paid') : t('pending')}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between mt-4 gap-2">
-                  <button 
-                    onClick={() => {
-                      setExpandedId(isExpanded ? null : debt.id);
-                      if (!isExpanded) setIsAddingRepayment(null);
-                    }}
-                    className="flex-1 flex items-center justify-center py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-bold"
-                  >
-                    {debt.type === 'borrowed' ? t('repay') : t('receive')} & {t('history')} {isExpanded ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
-                  </button>
-                  <button 
-                    onClick={() => handleEdit(debt)}
-                    className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(debt.id)}
-                    className="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 border-t border-gray-100 dark:border-gray-700 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h5 className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">{t('repaymentHistory')}</h5>
-                    <button 
-                      onClick={() => setIsAddingRepayment(debt.id)}
-                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase"
-                    >
-                      + {t('addPayment')}
-                    </button>
-                  </div>
-
-                  {isAddingRepayment === debt.id && (
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm space-y-3">
-                      <SwipeableNumberInput 
-                        value={repaymentAmount}
-                        onChange={setRepaymentAmount}
-                        className="w-full px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg text-sm text-gray-900 dark:text-white"
-                        placeholder={t('amount')}
-                        isPrice={true}
-                      />
-                      <input 
-                        type="date" 
-                        value={repaymentDate}
-                        onChange={(e) => setRepaymentDate(e.target.value)}
-                        className="w-full px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg text-sm text-gray-900 dark:text-white"
-                      />
-                      <input 
-                        type="text" 
-                        value={repaymentNote}
-                        onChange={(e) => setRepaymentNote(e.target.value)}
-                        className="w-full px-3 py-2 border dark:border-gray-600 bg-white dark:bg-gray-900 rounded-lg text-sm text-gray-900 dark:text-white"
-                        placeholder={t('noteOptional')}
-                      />
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleAddRepayment(debt.id)}
-                          className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold"
-                        >
-                          {t('save')}
-                        </button>
-                        <button 
-                          onClick={() => setIsAddingRepayment(null)}
-                          className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-lg text-xs font-bold"
-                        >
-                          {t('cancel')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    {debt.repayments?.map(repayment => (
-                      <div key={repayment.id} className="flex justify-between items-center bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{currencySymbol}{repayment.amount.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500">{format(new Date(repayment.date), 'MMM d, yyyy')} {repayment.note && `• ${repayment.note}`}</p>
-                        </div>
-                        <button 
-                          onClick={() => handleDeleteRepayment(debt.id, repayment.id)}
-                          className="p-1.5 text-gray-300 dark:text-gray-600"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
-                    {(!debt.repayments || debt.repayments.length === 0) && (
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center py-2 italic">{t('noPaymentHistory')}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {debts.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-dashed border-gray-200 dark:border-gray-700">
-          <div className="w-16 h-16 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <HandCoins className="text-gray-300 dark:text-gray-600" size={32} />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('noDebtRecords')}</h3>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">{t('startAddingDebt')}</p>
-        </div>
-      )}
-      {/* Delete Debt Confirmation Modal */}
-      {debtToDelete && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('delete')}</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{t('confirmDelete')}</p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDebtToDelete(null)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={confirmDeleteDebt}
-                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
-              >
-                {t('delete')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Delete Repayment Confirmation Modal */}
-      {repaymentToDelete && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full relative animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('delete')}</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{t('confirmDelete')}</p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setRepaymentToDelete(null)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={confirmDeleteRepayment}
-                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
-              >
-                {t('delete')}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 };
-
-// Remove duplicate icon import at the bottom
+export default Debts;

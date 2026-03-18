@@ -275,7 +275,7 @@ export const Expenses: React.FC = () => {
   ));
 
   return (
-    <div className="space-y-4 pb-20 dark:text-gray-100 max-w-md mx-auto relative h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+    <div className="space-y-4 pt-4 sm:pt-6 px-4 pb-20 dark:text-gray-100 max-w-4xl lg:max-w-6xl mx-auto relative h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
       {/* Top compare banner */}
       {showMonthCompare && (
         <div className="shrink-0 bg-white dark:bg-gray-800 rounded-2xl p-3 flex justify-between items-center shadow-sm border border-gray-100 dark:border-gray-700 relative">
@@ -489,7 +489,7 @@ export const Expenses: React.FC = () => {
                    </div>
                  </div>
                  
-                 <div className="space-y-2.5">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                    {items.map((transaction: any) => (
                      <div key={transaction.id} className="relative group bg-gray-50/50 dark:bg-gray-800 rounded-2xl p-4 flex items-center justify-between border border-gray-100/50 dark:border-gray-700">
                         <div className="flex items-center">
@@ -803,7 +803,7 @@ export const Expenses: React.FC = () => {
       {/* Graph & Summary View Portal */}
       {showGraphView && createPortal(
         <div className="fixed inset-0 z-[10000] bg-gray-50 dark:bg-gray-900 overflow-y-auto no-scrollbar w-full h-full animate-in slide-in-from-bottom-4 duration-300 sm:slide-in-from-right-8">
-          <div className="max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 relative shadow-2xl">
+          <div className="max-w-4xl mx-auto md:max-w-6xl min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 relative shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10 border-b border-gray-100 dark:border-gray-700">
               <button onClick={() => setShowGraphView(false)} className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">

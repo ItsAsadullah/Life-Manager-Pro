@@ -435,7 +435,15 @@ const currencySymbols: Record<Currency, string> = {
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currency, setCurrencyState] = useState<Currency>(() => (localStorage.getItem('currency') as Currency) || 'BDT');
   const [language, setLanguageState] = useState<Language>(() => (localStorage.getItem('language') as Language) || 'bn');
-  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'light');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    document.documentElement.classList.remove('dark');
+    const savedTheme = (localStorage.getItem('theme') as Theme) || 'light';
+    console.log('Initializing theme:', savedTheme);
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+    return savedTheme;
+  });
 
   useEffect(() => {
     localStorage.setItem('currency', currency);
@@ -446,17 +454,27 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language]);
 
   useEffect(() => {
-    localStorage.setItem('theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
+    // Ensure light mode on mount if theme is light
+    if (theme === 'light') {
       document.documentElement.classList.remove('dark');
     }
-  }, [theme]);
+  }, []);
 
   const setCurrency = (c: Currency) => setCurrencyState(c);
   const setLanguage = (l: Language) => setLanguageState(l);
-  const toggleTheme = () => setThemeState(prev => prev === 'light' ? 'dark' : 'light');
+  const toggleTheme = () => {
+    console.log('toggleTheme called');
+    setThemeState(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('theme', next);
+      return next;
+    });
+  };
 
   const t = (key: string) => {
     return translations[language][key] || key;

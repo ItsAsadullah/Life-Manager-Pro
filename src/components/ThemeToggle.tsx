@@ -4,6 +4,7 @@ import { useSettings } from '../contexts/SettingsContext';
 
 export const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useSettings();
+  console.log('ThemeToggle rendered, theme:', theme);
 
   return (
     <button

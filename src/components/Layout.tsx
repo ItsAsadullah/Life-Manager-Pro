@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
-import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins, Settings as SettingsIcon, X } from 'lucide-react';
+import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins, Settings as SettingsIcon, X, Bell } from 'lucide-react';
 import { QuickActionFAB } from './QuickActionFAB';
 import { motion, AnimatePresence } from 'motion/react';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { t } = useSettings();
+  const { t, theme } = useSettings();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const navItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: t('dashboard'), key: 'dashboard' },
-    { to: '/notes', icon: <StickyNote size={20} />, label: t('notes'), key: 'notes' },
-    { to: '/market-memo', icon: <ShoppingCart size={20} />, label: t('marketMemo'), key: 'marketMemo' },
     { to: '/expenses', icon: <Receipt size={20} />, label: t('expenses'), key: 'expenses' },
     { to: '/debts', icon: <HandCoins size={20} />, label: t('debts'), key: 'debts' },
+    { to: '/notes', icon: <StickyNote size={20} />, label: t('notes'), key: 'notes' },
+    { to: '/market-memo', icon: <ShoppingCart size={20} />, label: t('marketMemo'), key: 'marketMemo' },
     { to: '/scanner', icon: <ScanLine size={20} />, label: t('scanner'), key: 'scanner' },
     { to: '/chatbot', icon: <Bot size={20} />, label: t('chatbot'), key: 'chatbot' },
     { to: '/image-gen', icon: <ImageIcon size={20} />, label: t('imageGen'), key: 'imageGen' },
@@ -78,11 +80,54 @@ export const Layout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header (No Hamburger) */}
-        <header className="md:hidden h-16 bg-white border-b border-gray-200 flex items-center justify-center px-4 dark:bg-gray-800 dark:border-gray-700">
-          <h1 className="text-lg font-bold text-indigo-600 dark:text-indigo-400">Hishab Nikash</h1>
+        <header className="md:hidden h-16 bg-[#f7f9fc] flex items-center justify-between px-4 dark:bg-gray-800 shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 border-2 border-blue-500 rounded flex items-center justify-center transform -skew-x-12">
+               <span className="text-blue-500 font-bold text-xs transform skew-x-12">HN</span>
+            </div>
+            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400">হিসাব নিকাশ</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+             <div className="flex items-center bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold dark:bg-blue-900/30 dark:text-blue-400">
+               <span className="mr-1">★</span> 10
+             </div>
+             <button className="text-gray-700 dark:text-gray-300">
+               <Bell size={20} className="fill-current" />
+             </button>
+             <ThemeToggle />
+             <button onClick={() => navigate('/settings')} className="text-gray-700 dark:text-gray-300">
+                <SettingsIcon size={20} className="fill-current" />
+             </button>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-gray-50/50 dark:bg-gray-900">
+        {/* Mobile Top Navigation */}
+        <nav className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-1 py-1 flex justify-between items-center z-40 shadow-sm shrink-0 overflow-x-auto hide-scrollbar scroll-smooth">
+          {navItems.slice(0, 5).map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className="flex flex-col items-center justify-center p-1 min-w-[50px] transition-colors"
+            >
+              <div className={`mb-1 p-1.5 rounded-lg ${location.pathname === item.to ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                 {React.cloneElement(item.icon, { size: 18 })}
+              </div>
+              <span className={`text-[10px] font-medium whitespace-nowrap ${location.pathname === item.to ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>{item.label}</span>
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setIsMoreMenuOpen(true)}
+            className="flex flex-col items-center justify-center p-1 min-w-[50px] transition-colors"
+          >
+            <div className={`mb-1 p-1.5 rounded-lg ${isMoreMenuOpen ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+              <Menu size={18} />
+            </div>
+            <span className={`text-[10px] font-medium whitespace-nowrap ${isMoreMenuOpen ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}>{t('more')}</span>
+          </button>
+        </nav>
+
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-50/50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
@@ -145,31 +190,6 @@ export const Layout: React.FC = () => {
             </>
           )}
         </AnimatePresence>
-
-        {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-2 flex justify-around items-center z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-          {navItems.slice(0, 5).map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex flex-col items-center p-2 rounded-lg transition-colors ${
-                  isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'
-                }`
-              }
-            >
-              <span className="mb-1">{item.icon}</span>
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </NavLink>
-          ))}
-          <button
-            onClick={() => setIsMoreMenuOpen(true)}
-            className={`flex flex-col items-center p-2 transition-colors ${isMoreMenuOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`}
-          >
-            <Menu size={20} className="mb-1" />
-            <span className="text-[10px] font-medium">{t('more')}</span>
-          </button>
-        </nav>
       </div>
     </div>
   );

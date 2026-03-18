@@ -146,12 +146,12 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* Currency Section */}
-      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg dark:bg-emerald-900/30 dark:text-emerald-400">
             <DollarSign size={20} />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('currency')}</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('currency')}</h2>
         </div>
         <div className="grid grid-cols-3 gap-4">
           {[
@@ -163,7 +163,7 @@ export const Settings: React.FC = () => {
               key={c.id}
               onClick={() => setCurrency(c.id as any)}
               className={`p-4 rounded-xl border-2 transition-all text-center ${
-                currency === c.id ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-gray-100 hover:border-gray-200 text-gray-600'
+                currency === c.id ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'border-gray-100 hover:border-gray-200 text-gray-600 dark:border-gray-700 dark:hover:border-gray-600 dark:text-gray-400'
               }`}
             >
               <span className="block text-xl font-bold mb-1">{c.symbol}</span>
@@ -174,39 +174,39 @@ export const Settings: React.FC = () => {
       </section>
 
       {/* Data Management */}
-      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+          <div className="p-2 bg-amber-50 text-amber-600 rounded-lg dark:bg-amber-900/30 dark:text-amber-400">
             <ShieldCheck size={20} />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('backup')}</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('backup')}</h2>
         </div>
         <div className="space-y-4">
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group"
+            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group dark:bg-gray-900/50 dark:hover:bg-gray-700"
           >
             <div className="flex items-center space-x-3">
-              <Download size={20} className="text-gray-500 group-hover:text-indigo-600" />
+              <Download size={20} className="text-gray-500 group-hover:text-indigo-600 dark:text-gray-400 dark:group-hover:text-indigo-400" />
               <div className="text-left">
-                <span className="block font-bold text-gray-900">{t('export')}</span>
-                <span className="text-xs text-gray-500">{t('exportDescription')}</span>
+                <span className="block font-bold text-gray-900 dark:text-white">{t('export')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('exportDescription')}</span>
               </div>
             </div>
-            {isExporting && <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-600 border-t-transparent" />}
+            {isExporting && <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-600 border-t-transparent dark:border-indigo-400" />}
           </button>
 
-          <label className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group cursor-pointer">
+          <label className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group cursor-pointer dark:bg-gray-900/50 dark:hover:bg-gray-700">
             <div className="flex items-center space-x-3">
-              <Upload size={20} className="text-gray-500 group-hover:text-amber-600" />
+              <Upload size={20} className="text-gray-500 group-hover:text-amber-600 dark:text-gray-400 dark:group-hover:text-amber-400" />
               <div className="text-left">
-                <span className="block font-bold text-gray-900">{t('import')}</span>
-                <span className="text-xs text-gray-500">{t('importDescription')}</span>
+                <span className="block font-bold text-gray-900 dark:text-white">{t('import')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('importDescription')}</span>
               </div>
             </div>
             <input type="file" accept=".json" onChange={handleImport} className="hidden" disabled={isImporting} />
-            {isImporting && <div className="animate-spin rounded-full h-5 w-5 border-2 border-amber-600 border-t-transparent" />}
+            {isImporting && <div className="animate-spin rounded-full h-5 w-5 border-2 border-amber-600 border-t-transparent dark:border-amber-400" />}
           </label>
         </div>
       </section>

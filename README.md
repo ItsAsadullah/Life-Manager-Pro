@@ -10,11 +10,29 @@ View your app in AI Studio: https://ai.studio/apps/3bb9cdca-6388-4552-8b6c-b4181
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Web Push (FCM) Setup
+
+To enable installed-PWA/background notifications:
+
+1. In Firebase Console, open **Cloud Messaging** and create a **Web Push certificate key pair**.
+2. Put the public VAPID key into `.env.local`:
+   `VITE_FIREBASE_VAPID_KEY=YOUR_PUBLIC_VAPID_KEY`
+3. Ensure Firebase config values are present in `.env.local` (or use `firebase-applet-config.json`).
+4. In browser/app settings, allow notifications and enable reminders.
+
+### Backend delivery (production)
+
+This repo now registers device token(s) into `users/{uid}.push.token`.
+For true native-like scheduled reminders, add a backend scheduler (Cloud Functions + Cloud Scheduler or another cron worker) that:
+
+- Finds due reminders by time/timezone
+- Sends FCM message to stored token
+- Includes `title`, `body`, and optional `click_action`

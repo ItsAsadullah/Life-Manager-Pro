@@ -3,12 +3,26 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { Globe, DollarSign, Download, Upload, Check, AlertCircle, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Globe, DollarSign, Download, Upload, Check, AlertCircle, ShieldCheck, Sun, Moon, Bell, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 export const Settings: React.FC = () => {
-  const { currency, setCurrency, language, setLanguage, theme, toggleTheme, t } = useSettings();
+  const {
+    currency,
+    setCurrency,
+    language,
+    setLanguage,
+    theme,
+    t,
+    notificationsEnabled,
+    notificationPermission,
+    notificationTimes,
+    setNotificationsEnabled,
+    setNotificationTimes,
+    requestNotificationPermission,
+    sendTestNotification,
+  } = useSettings();
   const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -77,6 +91,37 @@ export const Settings: React.FC = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleNotificationsToggle = async (enabled: boolean) => {
+    if (!enabled) {
+      setNotificationsEnabled(false);
+      return;
+    }
+
+    const permission = await requestNotificationPermission();
+    if (permission === 'granted') {
+      setNotificationsEnabled(true);
+      setMessage({ type: 'success', text: t('permissionGranted') });
+    } else if (permission === 'denied') {
+      setMessage({ type: 'error', text: t('permissionDenied') });
+    } else if (permission === 'unsupported') {
+      setMessage({ type: 'error', text: t('notificationsUnsupported') });
+    }
+  };
+
+  const updateNotificationTime = (index: number, value: string) => {
+    const next = [...notificationTimes];
+    next[index] = value;
+    setNotificationTimes(next);
+  };
+
+  const addNotificationTime = () => {
+    setNotificationTimes([...notificationTimes, '21:00']);
+  };
+
+  const removeNotificationTime = (index: number) => {
+    setNotificationTimes(notificationTimes.filter((_, itemIndex) => itemIndex !== index));
   };
 
   return (
@@ -170,6 +215,83 @@ export const Settings: React.FC = () => {
               <span className="text-xs font-medium">{c.label} ({c.id})</span>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Notification Section */}
+      <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg dark:bg-blue-900/30 dark:text-blue-400">
+            <Bell size={20} />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('notifications')}</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('notificationSchedule')}</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+            <span className="font-medium text-gray-700 dark:text-gray-300">{t('enableNotifications')}</span>
+            <button
+              type="button"
+              onClick={() => handleNotificationsToggle(!notificationsEnabled)}
+              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${notificationsEnabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+              />
+            </button>
+          </div>
+
+          <div className="text-xs font-medium px-1">
+            {notificationPermission === 'granted' && <span className="text-emerald-600 dark:text-emerald-400">{t('permissionGranted')}</span>}
+            {notificationPermission === 'denied' && <span className="text-rose-600 dark:text-rose-400">{t('permissionDenied')}</span>}
+            {notificationPermission === 'default' && <span className="text-amber-600 dark:text-amber-400">{t('permissionDefault')}</span>}
+            {notificationPermission === 'unsupported' && <span className="text-rose-600 dark:text-rose-400">{t('notificationsUnsupported')}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('notificationTimes')}</span>
+              <button
+                type="button"
+                onClick={addNotificationTime}
+                className="inline-flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400"
+              >
+                <Plus size={16} className="mr-1" />
+                {t('addTime')}
+              </button>
+            </div>
+
+            {notificationTimes.map((time, index) => (
+              <div key={`${time}-${index}`} className="flex items-center gap-3">
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(event) => updateNotificationTime(index, event.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeNotificationTime(index)}
+                  disabled={notificationTimes.length === 1}
+                  className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed dark:text-rose-400 dark:hover:bg-rose-900/20"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={sendTestNotification}
+            disabled={!notificationsEnabled || notificationPermission !== 'granted'}
+            className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {t('testNotification')}
+          </button>
         </div>
       </section>
 

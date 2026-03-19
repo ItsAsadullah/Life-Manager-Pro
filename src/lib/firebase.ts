@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getMessaging, getToken, isSupported, onMessage, type MessagePayload } from 'firebase/messaging';
 import aiStudioConfig from '../../firebase-applet-config.json';
 
 // Safely merge environment variables with AI Studio config
@@ -20,3 +21,39 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 export const storage = getStorage(app);
+
+const vapidKey = (import.meta as any).env.VITE_FIREBASE_VAPID_KEY as string | undefined || (aiStudioConfig as any).vapidKey;
+
+export const getFirebaseMessagingConfig = () => ({
+  apiKey: firebaseConfig.apiKey,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  messagingSenderId: firebaseConfig.messagingSenderId,
+  appId: firebaseConfig.appId,
+});
+
+export const isPushNotificationsSupported = async () => {
+  if (typeof window === 'undefined') return false;
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return false;
+  return isSupported();
+};
+
+export const getPushNotificationToken = async (registration: ServiceWorkerRegistration) => {
+  if (!vapidKey) return null;
+  const supported = await isPushNotificationsSupported();
+  if (!supported) return null;
+  const messaging = getMessaging(app);
+  const token = await getToken(messaging, {
+    vapidKey,
+    serviceWorkerRegistration: registration,
+  });
+  return token || null;
+};
+
+export const onForegroundPushMessage = (callback: (payload: MessagePayload) => void) => {
+  if (typeof window === 'undefined') return () => {};
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return () => {};
+  const messaging = getMessaging(app);
+  return onMessage(messaging, callback);
+};

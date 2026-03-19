@@ -2,17 +2,53 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
-import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins, Settings as SettingsIcon, X, Bell } from 'lucide-react';
+import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon, LogOut, Menu, ShoppingCart, HandCoins, Settings as SettingsIcon, X, Bell, Plus, Trash2 } from 'lucide-react';
 import { QuickActionFAB } from './QuickActionFAB';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { t, theme } = useSettings();
+  const {
+    t,
+    notificationsEnabled,
+    notificationPermission,
+    notificationReminders,
+    setNotificationsEnabled,
+    requestNotificationPermission,
+    addNotificationReminder,
+    updateNotificationReminder,
+    removeNotificationReminder,
+  } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const [newReminderTime, setNewReminderTime] = useState('20:00');
+  const [newReminderMessage, setNewReminderMessage] = useState('');
+
+  const handleOpenNotificationPanel = async () => {
+    setIsNotificationPanelOpen(true);
+    if (notificationPermission === 'default') {
+      const permission = await requestNotificationPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+      }
+    }
+  };
+
+  const handleAddReminder = async () => {
+    if (!newReminderTime) return;
+    if (notificationPermission !== 'granted') {
+      const permission = await requestNotificationPermission();
+      if (permission !== 'granted') {
+        return;
+      }
+    }
+    setNotificationsEnabled(true);
+    addNotificationReminder(newReminderTime, newReminderMessage || t('notificationBody'));
+    setNewReminderMessage('');
+  };
 
   const navItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: t('dashboard'), key: 'dashboard' },
@@ -90,8 +126,13 @@ export const Layout: React.FC = () => {
              <div className="flex items-center bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold dark:bg-blue-900/30 dark:text-blue-400">
                <span className="mr-1">★</span> 10
              </div>
-             <button className="text-gray-700 dark:text-gray-300">
+             <button onClick={handleOpenNotificationPanel} className="text-gray-700 dark:text-gray-300 relative">
                <Bell size={20} className="fill-current" />
+               {notificationReminders.filter((item) => item.enabled).length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 text-[10px] bg-indigo-600 text-white rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+                  {notificationReminders.filter((item) => item.enabled).length}
+                </span>
+               )}
              </button>
              <ThemeToggle />
              <button onClick={() => navigate('/settings')} className="text-gray-700 dark:text-gray-300">
@@ -135,6 +176,85 @@ export const Layout: React.FC = () => {
 
         {/* More Menu Overlay */}
         <AnimatePresence>
+          {isNotificationPanelOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsNotificationPanelOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              />
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-[32px] p-6 z-[60] shadow-2xl border-t border-gray-100 dark:border-gray-700 max-h-[75vh] overflow-y-auto"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('customReminder')}</h2>
+                  <button onClick={() => setIsNotificationPanelOpen(false)} className="p-2 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-300">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-3 mb-5">
+                  <input
+                    type="time"
+                    value={newReminderTime}
+                    onChange={(event) => setNewReminderTime(event.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
+                  />
+                  <textarea
+                    value={newReminderMessage}
+                    onChange={(event) => setNewReminderMessage(event.target.value)}
+                    placeholder={t('reminderMessagePlaceholder')}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 resize-none"
+                  />
+                  <button
+                    onClick={handleAddReminder}
+                    className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 flex items-center justify-center"
+                  >
+                    <Plus size={16} className="mr-2" />
+                    {t('saveReminder')}
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {notificationReminders.length === 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('noRemindersYet')}</p>
+                  )}
+                  {notificationReminders.map((item) => (
+                    <div key={item.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{item.time}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{item.message}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateNotificationReminder(item.id, { enabled: !item.enabled })}
+                            className={`px-2 py-1 text-[10px] rounded-lg font-semibold ${item.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                          >
+                            {item.enabled ? 'ON' : 'OFF'}
+                          </button>
+                          <button
+                            onClick={() => removeNotificationReminder(item.id)}
+                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </>
+          )}
+
           {isMoreMenuOpen && (
             <>
               <motion.div

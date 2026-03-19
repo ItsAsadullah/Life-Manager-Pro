@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { registerUserPushToken } from '../lib/pushNotifications';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: new Date().toISOString()
           });
         }
+
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          registerUserPushToken(currentUser.uid).catch((error) => {
+            console.error('Push token registration failed:', error);
+          });
+        }
+
         setUser(currentUser);
       } else {
         setUser(null);

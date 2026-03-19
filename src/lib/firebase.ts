@@ -43,12 +43,23 @@ export const getPushNotificationToken = async (registration: ServiceWorkerRegist
   if (!vapidKey) return null;
   const supported = await isPushNotificationsSupported();
   if (!supported) return null;
+  
+  if (!registration || !('pushManager' in registration)) {
+    console.warn('Push manager unavailable. Browser might not support push notifications.');
+    return null;
+  }
+
   const messaging = getMessaging(app);
-  const token = await getToken(messaging, {
-    vapidKey,
-    serviceWorkerRegistration: registration,
-  });
-  return token || null;
+  try {
+    const token = await getToken(messaging, {
+      vapidKey,
+      serviceWorkerRegistration: registration,
+    });
+    return token || null;
+  } catch (error) {
+    console.error('Firebase GetToken Error:', error);
+    return null;
+  }
 };
 
 export const onForegroundPushMessage = (callback: (payload: MessagePayload) => void) => {

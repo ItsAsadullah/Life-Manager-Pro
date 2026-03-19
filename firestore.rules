@@ -38,7 +38,9 @@ service cloud.firestore {
              (!('name' in data) || isValidString(data.name, 0, 100)) &&
              (!('email' in data) || isValidString(data.email, 5, 100)) &&
              (!('photoURL' in data) || isValidString(data.photoURL, 0, 1000)) &&
-             (!('createdAt' in data) || isValidDateString(data.createdAt));
+             (!('createdAt' in data) || isValidDateString(data.createdAt)) &&
+             (!('push' in data) || data.push is map) &&
+             (!('reminders' in data) || data.reminders is list);
     }
 
     function isValidNote(data) {

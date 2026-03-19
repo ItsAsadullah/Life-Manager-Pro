@@ -35,7 +35,7 @@ export const getFirebaseMessagingConfig = () => ({
 
 export const isPushNotificationsSupported = async () => {
   if (typeof window === 'undefined') return false;
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return false;
+  if (!('serviceWorker' in navigator) || !('Notification' in window) || !('PushManager' in window)) return false;
   return isSupported();
 };
 
@@ -64,7 +64,13 @@ export const getPushNotificationToken = async (registration: ServiceWorkerRegist
 
 export const onForegroundPushMessage = (callback: (payload: MessagePayload) => void) => {
   if (typeof window === 'undefined') return () => {};
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return () => {};
-  const messaging = getMessaging(app);
-  return onMessage(messaging, callback);
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return () => {};
+  
+  try {
+    const messaging = getMessaging(app);
+    return onMessage(messaging, callback);
+  } catch (error) {
+    console.warn('Firebase Messaging not supported here:', error);
+    return () => {};
+  }
 };

@@ -14,9 +14,8 @@ export const registerPushServiceWorker = async () => {
     appId: config.appId || '',
   });
 
-  const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${query.toString()}`);
-  await navigator.serviceWorker.ready;
-  return registration;
+  await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${query.toString()}`);
+  return await navigator.serviceWorker.ready;
 };
 
 export const registerUserPushToken = async (uid: string) => {

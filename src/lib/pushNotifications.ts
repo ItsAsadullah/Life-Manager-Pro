@@ -15,6 +15,7 @@ export const registerPushServiceWorker = async () => {
   });
 
   const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${query.toString()}`);
+  await navigator.serviceWorker.ready;
   return registration;
 };
 

@@ -29,7 +29,7 @@ export const Layout: React.FC = () => {
   const isDashboard = location.pathname === '/';
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 font-sans dark:bg-gray-900 dark:text-gray-100">
+    <div className="flex min-h-dvh bg-gray-50 text-gray-900 font-sans dark:bg-gray-900 dark:text-gray-100">
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-10 dark:bg-gray-800 dark:border-gray-700">
         <div className="h-20 flex items-center px-8 border-b border-gray-100 dark:border-gray-700">

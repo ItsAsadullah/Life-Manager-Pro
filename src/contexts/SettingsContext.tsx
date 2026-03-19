@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 import { registerUserPushToken } from '../lib/pushNotifications';
 
 type Currency = 'BDT' | 'INR' | 'USD';
@@ -580,6 +581,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     localStorage.setItem('notificationReminders', JSON.stringify(notificationReminders));
     localStorage.setItem('notificationTimes', JSON.stringify(notificationTimes));
+    
+    // Sync reminders to Firestore to allow backend scheduler to read them
+    if (auth.currentUser) {
+      updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        reminders: notificationReminders
+      }).catch(err => console.error('Failed to sync reminders:', err));
+    }
   }, [notificationReminders, notificationTimes]);
 
   useEffect(() => {

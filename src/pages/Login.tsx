@@ -4,7 +4,6 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Navigate } from 'react-router-dom';
 import { AlertCircle, Loader2, ShieldCheck, Layout, Sparkles, Smartphone } from 'lucide-react';
 import { motion } from 'motion/react';
-import hisabNikashLogo from '../components/images/Hisab Nikash.png';
 
 export const Login: React.FC = () => {
   const { user, signInWithGoogle } = useAuth();
@@ -55,7 +54,7 @@ export const Login: React.FC = () => {
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                 className="w-24 h-24 flex items-center justify-center mx-auto mb-6"
               >
-                <img src={hisabNikashLogo} alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
+                <img src="/logo.svg" alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
               </motion.div>
 
               <h1 className="text-4xl font-black text-white mb-2 tracking-tight">

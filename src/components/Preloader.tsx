@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { HandCoins } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
-import hisabNikashLogo from './images/Hisab Nikash.png';
 
 export const Preloader: React.FC = () => {
   const { t } = useSettings();
@@ -22,7 +21,7 @@ export const Preloader: React.FC = () => {
         className="mb-6"
       >
         <div className="w-24 h-24 flex items-center justify-center">
-          <img src={hisabNikashLogo} alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
+          <img src="/logo.svg" alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
         </div>
       </motion.div>
 

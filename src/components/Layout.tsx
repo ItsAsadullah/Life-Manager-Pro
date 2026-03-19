@@ -6,7 +6,6 @@ import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon
 import { QuickActionFAB } from './QuickActionFAB';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
-import hisabNikashLogo from './images/Hisab Nikash.png';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -35,7 +34,7 @@ export const Layout: React.FC = () => {
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-10 dark:bg-gray-800 dark:border-gray-700">
         <div className="h-20 flex items-center px-8 border-b border-gray-100 dark:border-gray-700">
             <div className="w-8 h-8 flex items-center justify-center mr-3">
-              <img src={hisabNikashLogo} alt="Logo" className="w-full h-full object-contain" />
+              <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-white">Hisab <span className="text-indigo-600">Nikash</span></h1>
         </div>
@@ -83,7 +82,7 @@ export const Layout: React.FC = () => {
         {/* Mobile Header (No Hamburger) */}
         <header className="md:hidden h-16 bg-[#f7f9fc] flex items-center justify-between px-4 dark:bg-gray-800 shrink-0">
           <div className="flex items-center space-x-2">
-            <img src={hisabNikashLogo} alt="Logo" className="w-8 h-8 object-contain" />
+            <img src="/logo.svg" alt="Logo" className="w-8 h-8 object-contain" />
             <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400">হিসাব নিকাশ</h1>
           </div>
           

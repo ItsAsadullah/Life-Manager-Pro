@@ -36,19 +36,10 @@ export const Dashboard: React.FC = () => {
 
     const debtsRef = collection(db, 'users', user.uid, 'debts');
     const qDebts = query(debtsRef, orderBy('createdAt', 'desc'));
-    const unsubscribeDebts = onSnapshot(qDebts, async (snapshot) => {
-      const dbts = await Promise.all(snapshot.docs.map(async (debtDoc) => {
-        const data = debtDoc.data();
-        let totalPaid = data.totalPaid;
-        
-        if (totalPaid === undefined) {
-          const repaymentsRef = collection(db, 'users', user.uid!, 'debts', debtDoc.id, 'repayments');
-          const repaymentsSnap = await getDocs(repaymentsRef);
-          totalPaid = repaymentsSnap.docs.reduce((sum, d) => sum + (d.data().amount || 0), 0);
-        }
-        
-        return { id: debtDoc.id, ...data, totalPaid };
-      }));
+    const unsubscribeDebts = onSnapshot(qDebts, (snapshot) => {
+      const dbts = snapshot.docs.map(debtDoc => {
+        return { id: debtDoc.id, ...debtDoc.data() };
+      });
       setDebts(dbts);
       setLoading(false);
     });
@@ -66,8 +57,8 @@ export const Dashboard: React.FC = () => {
   const totalIncome = expenses.reduce((sum, exp) => sum + (exp.type === 'income' ? (exp.amount || 0) : 0), 0);
   const currentMonthName = format(new Date(), 'MMMM');
   const currentMonthNameBn = new Date().toLocaleString('bn-BD', { month: 'long' });
-  const totalBorrowed = debts.filter(d => d.type === 'borrowed' && d.status === 'pending').reduce((sum, d) => sum + (d.amount - (d.totalPaid || 0)), 0);
-  const totalLent = debts.filter(d => d.type === 'lent' && d.status === 'pending').reduce((sum, d) => sum + (d.amount - (d.totalPaid || 0)), 0);
+  const totalBorrowed = debts.filter(d => d.type === 'borrowed').reduce((sum, d) => sum + d.amount, 0);
+  const totalLent = debts.filter(d => d.type === 'lent').reduce((sum, d) => sum + d.amount, 0);
   
   const categoryData = expenses.reduce((acc: any, exp) => {
     if(exp.type === 'income') return acc;

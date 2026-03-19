@@ -8,8 +8,10 @@ import { db } from '../lib/firebase';
 import { 
   ArrowDownCircle, ArrowUpCircle, UserRound, Phone, MapPin, 
   Calendar, Wallet, ImagePlus, X, MoreVertical, Search, 
-  ArrowLeft, FileText, ArrowDownLeft, ArrowUpRight, Check, Plus
+  ArrowLeft, FileText, ArrowDownLeft, ArrowUpRight, Check, Plus, Divide, Download, Loader2
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Repayment {
   id: string;
@@ -186,9 +188,13 @@ useEffect(() => {
         await updateDoc(doc(db, 'users', user.uid, 'debts', editingPersonId), {
           personName,
           phoneNumber,
+          address: personAddress,
+          imageUrl: personImage,
+          accountId: personAccount,
+          date: new Date(personDate).toISOString(),
           updatedAt: new Date().toISOString()
         });
-        
+
         // Update selectedPerson if it is currently open
         if (selectedPerson && selectedPerson.id === editingPersonId) {
             setSelectedPerson({
@@ -205,6 +211,10 @@ useEffect(() => {
         await addDoc(collection(db, 'users', user.uid, 'debts'), {
             personName,
             phoneNumber,
+            address: personAddress,
+            imageUrl: personImage,
+            accountId: personAccount,
+            date: new Date(personDate).toISOString(),
             amount: 0,
             type: 'lent',
             status: 'pending',
@@ -248,6 +258,124 @@ useEffect(() => {
     } catch(err) { console.error('Sync Error', err); }
   };
 
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!selectedPerson) return;
+    setIsGeneratingPDF(true);
+    
+    try {
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '800px';
+      container.style.backgroundColor = '#ffffff';
+      container.style.padding = '40px';
+      container.style.color = '#000000';
+      container.style.fontFamily = '"Hind Siliguri", sans-serif'; 
+      
+      let totalGot = 0;
+      let totalGave = 0;
+      repayments.forEach(r => {
+        if(r.type === 'got') totalGot += r.amount;
+        else totalGave += r.amount;
+      });
+
+      container.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px;">
+          <h1 style="font-size: 28px; margin: 0; color: #1e3a8a;">হিসাব নিকাশ</h1>
+          <p style="color: #666; margin-top: 5px;">দেনা-পাওনার রিপোর্ট</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+          <div>
+            <h2 style="margin: 0; font-size: 20px; color: #333;">${selectedPerson.personName}</h2>
+            ${selectedPerson.phoneNumber ? `<p style="margin: 5px 0 0; color: #666;">মোবাইল: ${selectedPerson.phoneNumber}</p>` : ''}
+            ${selectedPerson.address ? `<p style="margin: 5px 0 0; color: #666;">ঠিকানা: ${selectedPerson.address}</p>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <p style="margin: 0; color: #666;">রিপোর্ট তৈরির তারিখ:</p>
+            <p style="margin: 5px 0 0; font-weight: bold;">${new Date().toLocaleDateString('bn-BD')}</p>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+           <div style="flex: 1; padding: 15px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <p style="margin: 0; color: #64748b; font-size: 14px;">বর্তমান ব্যালেন্স</p>
+              <h3 style="margin: 5px 0 0; font-size: 22px; color: ${selectedPerson.amount === 0 ? '#333' : selectedPerson.type === 'lent' ? '#16a34a' : '#dc2626'};">
+                 ${selectedPerson.amount === 0 ? '৳ ০ (সমান)' : `৳ ${selectedPerson.amount.toLocaleString('en-US')} (${selectedPerson.type === 'lent' ? 'পাবো' : 'দিবো'})`}
+              </h3>
+           </div>
+           <div style="flex: 1; padding: 15px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0;">
+              <p style="margin: 0; color: #16a34a; font-size: 14px;">মোট পেয়েছি</p>
+              <h3 style="margin: 5px 0 0; font-size: 20px; color: #16a34a;">৳ ${totalGot.toLocaleString('en-US')}</h3>
+           </div>
+           <div style="flex: 1; padding: 15px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca;">
+              <p style="margin: 0; color: #dc2626; font-size: 14px;">মোট দিয়েছি</p>
+              <h3 style="margin: 5px 0 0; font-size: 20px; color: #dc2626;">৳ ${totalGave.toLocaleString('en-US')}</h3>
+           </div>
+        </div>
+
+        <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px;">লেনদেনের বিবরণ</h3>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+          <thead>
+            <tr style="background-color: #f1f5f9;">
+              <th style="padding: 12px; text-align: left; border: 1px solid #cbd5e1; color: #475569;">তারিখ</th>
+              <th style="padding: 12px; text-align: left; border: 1px solid #cbd5e1; color: #475569;">বিবরণ</th>
+              <th style="padding: 12px; text-align: right; border: 1px solid #cbd5e1; color: #475569;">পরিমাণ (৳)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${repayments.length > 0 ? repayments.map(rep => `
+              <tr>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; color: #333;">${new Date(rep.createdAt || rep.date).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit' })}</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; color: #555;">
+                   <span style="font-weight: bold; color: ${rep.type === 'got' ? '#16a34a' : '#dc2626'}">${rep.type === 'got' ? 'পেলাম' : 'দিলাম'}</span>
+                   ${rep.note ? `<br/><span style="font-size: 12px;">${rep.note}</span>` : ''}
+                </td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: right; font-weight: bold; color: ${rep.type === 'got' ? '#16a34a' : '#dc2626'}">${rep.amount.toLocaleString('en-US')}</td>
+              </tr>
+            `).join('') : `
+              <tr>
+                 <td colspan="3" style="padding: 20px; text-align: center; border: 1px solid #e2e8f0; color: #64748b;">কোনো লেনদেন পাওয়া যায়নি</td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #cbd5e1; color: #94a3b8; font-size: 12px;">
+          <p>এই রিপোর্টটি <strong>হিসাব নিকাশ</strong> অ্যাপ দ্বারা স্বয়ংক্রিয়ভাবে তৈরি করা হয়েছে।</p>
+        </div>
+      `;
+
+      document.body.appendChild(container);
+      
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      
+      document.body.removeChild(container);
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Transactions_${selectedPerson.personName.replace(/\s+/g, '_')}.pdf`);
+      
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("PDF তৈরি করতে সমস্যা হয়েছে!");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   const handleSaveTransaction = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!user || !selectedPerson || !trxAmount) return;
@@ -284,20 +412,27 @@ useEffect(() => {
   if (selectedPerson) {
     // ==== Person Details View (Screenshot 3 & 4) ====
     return createPortal(
-      <div className="fixed inset-0 z-[50] overflow-y-auto bg-gray-50 pb-20 dark:bg-gray-900 animate-in slide-in-from-right duration-200">
-        <div className="max-w-2xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <div className="bg-white dark:bg-gray-800 px-4 py-4 flex items-center justify-between sticky top-0 z-10 border-b border-gray-100 dark:border-gray-700">
-          <button onClick={() => setSelectedPerson(null)} className="p-2 -ml-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">ব্যক্তির বিবরণ</h1>
-          <button className="p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-            <FileText size={24} />
-          </button>
-        </div>
+      <div className="fixed inset-0 z-[50] justify-center bg-gray-50 dark:bg-gray-900 animate-in slide-in-from-right duration-200 flex flex-col items-center">
+        <div className="w-full max-w-2xl mx-auto h-full flex flex-col bg-gray-50 dark:bg-gray-900 relative">
+        
+        {/* Fixed Header Region */}
+        <div className="flex-shrink-0 w-full z-20 pb-4 shadow-sm border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 pt-safe relative">
+          <div className="bg-white dark:bg-gray-800 px-4 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+            <button onClick={() => setSelectedPerson(null)} className="p-2 -ml-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+              <ArrowLeft size={24} />
+            </button>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">ব্যক্তির বিবরণ</h1>
+            <button 
+              onClick={handleDownloadPDF} 
+              disabled={isGeneratingPDF}
+              className={`p-2 rounded-full transition-colors flex items-center justify-center ${isGeneratingPDF ? 'text-blue-400 bg-blue-50 dark:bg-blue-900/30 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            >
+              {isGeneratingPDF ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} />}
+            </button>
+          </div>
 
-        <div className="p-4 space-y-4 max-w-2xl mx-auto">
-          {/* Person Header */}
+          <div className="px-4 pt-4 space-y-4 w-full">
+            {/* Person Header */}
           <div className="flex items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center overflow-hidden border border-blue-100 dark:border-blue-800 text-blue-500 shadow-inner">
               {selectedPerson.imageUrl ? (
@@ -333,9 +468,15 @@ useEffect(() => {
                 <div className="text-xl font-bold">৳ ০</div>
              </div>
           )}
+          </div>
+          
+          <div className="absolute -bottom-4 left-0 right-0 h-4 bg-gradient-to-b from-gray-50/50 dark:from-gray-900/50 to-transparent pointer-events-none"></div>
+        </div>
 
+        {/* Scrollable Region */}
+        <div className="flex-1 overflow-y-auto px-4 w-full pb-[100px] pt-4">
           {/* Transactions List */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {repayments.map(rep => (
               <div key={rep.id} className={`p-4 rounded-2xl border flex items-center justify-between shadow-sm ${rep.type === 'got' ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-800/30' : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'}`}>
                 <div className="flex items-center gap-3">

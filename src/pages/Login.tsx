@@ -4,6 +4,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Navigate } from 'react-router-dom';
 import { AlertCircle, Loader2, ShieldCheck, Layout, Sparkles, Smartphone } from 'lucide-react';
 import { motion } from 'motion/react';
+import hisabNikashLogo from '../components/images/Hisab Nikash.png';
 
 export const Login: React.FC = () => {
   const { user, signInWithGoogle } = useAuth();
@@ -52,17 +53,14 @@ export const Login: React.FC = () => {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30 rotate-3"
-            >
-              <ShieldCheck className="text-white" size={40} />
-            </motion.div>
-            
-            <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
-              Hisab <span className="text-indigo-400">Nikash</span>
-            </h1>
-            <p className="text-indigo-200/70 text-sm font-medium mb-8">
-              {t('loginSubtitle')}
-            </p>
+                className="w-24 h-24 flex items-center justify-center mx-auto mb-6"
+              >
+                <img src={hisabNikashLogo} alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
+              </motion.div>
+
+              <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+                Hisab <span className="text-indigo-400">Nikash</span>
+              </h1>
 
             <div className="grid grid-cols-3 gap-4 mb-10">
               <div className="flex flex-col items-center gap-2">

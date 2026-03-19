@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { HandCoins } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import hisabNikashLogo from './images/Hisab Nikash.png';
 
 export const Preloader: React.FC = () => {
   const { t } = useSettings();
@@ -12,20 +13,19 @@ export const Preloader: React.FC = () => {
         animate={{ 
           scale: [0.8, 1.1, 1],
           opacity: 1,
-          rotate: [0, 10, -10, 0]
         }}
-        transition={{ 
+        transition={{
           duration: 1.5,
           repeat: Infinity,
           ease: "easeInOut"
         }}
         className="mb-6"
       >
-        <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-200">
-          <HandCoins className="text-white w-10 h-10" />
+        <div className="w-24 h-24 flex items-center justify-center">
+          <img src={hisabNikashLogo} alt="Hisab Nikash Logo" className="w-full h-full object-contain" />
         </div>
       </motion.div>
-      
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

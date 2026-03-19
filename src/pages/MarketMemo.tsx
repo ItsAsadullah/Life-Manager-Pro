@@ -7,7 +7,7 @@ import { collection, query, onSnapshot, orderBy, addDoc, deleteDoc, doc, updateD
 import { db } from '../lib/firebase';
 import { Plus, Save, X, ShoppingCart, Trash2, Receipt, Edit2, CheckCircle, Check, Share2, Copy, Image as ImageIcon, FileText, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 import { playTick } from '../utils/audio';
@@ -64,108 +64,325 @@ export const MarketMemo: React.FC = () => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
-  const handleShareText = (memo: any) => {
-    let text = `🛒 ${t('marketMemoTitle')}: ${memo.title}\n`;
-    if (memo.createdAt) {
-      text += `📅 ${t('date')}: ${format(new Date(memo.createdAt), 'MMM d, yyyy')}\n`;
-    }
-    text += `------------------------\n`;
-    memo.items.forEach((item: any, index: number) => {
-      text += `${index + 1}. ${item.name} - ${item.quantity}${t(item.unit)} @ ${currencySymbol}${item.unitPrice} = ${currencySymbol}${item.total}\n`;
-    });
-    text += `------------------------\n`;
-    text += `💰 ${t('total')}: ${currencySymbol}${memo.totalAmount.toLocaleString()}\n\n`;
-    text += `${t('developedBy')}: Asadullah Al Galib\n`;
-    text += `B.Sc in CSE, 01911777694\n`;
-    text += `${t('createdWith')}\n`;
+const copyToClipboard = async (text: string, successMsg: string) => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          setSuccessMessage(successMsg);
+        } else {
+          const textArea = document.createElement("textarea");
+          textArea.value = text;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          textArea.style.top = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand('copy');
+            setSuccessMessage(successMsg);
+          } catch (err) {
+            console.error('Fallback copy failed', err);
+          }
+          textArea.remove();
+        }
+      } catch (err) {
+        console.error('Clipboard copy failed:', err);
+      }
+    };
 
-    if (navigator.share) {
-      navigator.share({
-        title: memo.title,
-        text: text,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(text);
-      setSuccessMessage(t('copiedToClipboard'));
-    }
-    setSharingMemo(null);
-  };
-
-  const handleShareImage = async (memo: any) => {
-    const element = document.getElementById(`memo-capture-${memo.id}`);
-    if (!element) return;
-    
-    // Ensure element is visible for capture
-    const originalStyle = element.getAttribute('style') || '';
-    element.style.display = 'block';
-    element.style.position = 'fixed';
-    element.style.left = '-9999px';
-    element.style.top = '0';
-    element.style.visibility = 'visible';
-    
-    try {
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: true
+    const handleShareText = (memo: any) => {
+      let text = `🛒 ${t('marketMemoTitle')}: ${memo.title}\n`;
+      if (memo.createdAt) {
+        text += `📅 ${t('date')}: ${format(new Date(memo.createdAt), 'MMM d, yyyy')}\n`;
+      }
+      text += `------------------------\n`;
+      memo.items.forEach((item: any, index: number) => {
+        text += `${index + 1}. ${item.name} - ${item.quantity}${t(item.unit)} @ ${currencySymbol}${item.unitPrice} = ${currencySymbol}${item.total}\n`;
       });
-      const dataUrl = canvas.toDataURL('image/png');
+      text += `------------------------\n`;
+      text += `💰 ${t('total')}: ${currencySymbol}${memo.totalAmount.toLocaleString()}\n\n`;
+      text += `${t('developedBy')}: Asadullah Al Galib\n`;
+      text += `B.Sc in CSE, 01911777694\n`;
+      text += `${t('createdWith')}\n`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: memo.title,
+          text: text,
+        }).catch((e) => {
+          copyToClipboard(text, t('copiedToClipboard') || 'Copied!');
+        });
+      } else {
+        copyToClipboard(text, t('copiedToClipboard') || 'Copied!');
+      }
+      setSharingMemo(null);
+    };
+
+    const handleShareImage = async (memo: any) => {
+      const element = document.getElementById(`memo-capture-${memo.id}`);
+      if (!element) return;
+
+      // Ensure element is visible for capture, avoiding negative coordinates that break html-to-image
+      const originalStyle = element.getAttribute('style') || '';
+      element.style.display = 'block';
+      element.style.position = 'absolute';
+      element.style.left = '0';
+      element.style.top = '0';
+      element.style.zIndex = '-9999';
+      element.style.visibility = 'visible';
+
+      // Give a tiny delay for DOM to reflect positioning before capturing
+      setTimeout(async () => {
+        try {
+          // Explicitly grab dimensions so we prevent cropping on large memos
+          const width = element.scrollWidth;
+          const height = element.scrollHeight;
+
+          const dataUrl = await toPng(element, { 
+            backgroundColor: '#ffffff', 
+            pixelRatio: 2,
+            width: width,
+            height: height,
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left'
+            }
+          });
+          const link = document.createElement('a');
+          link.download = `Market_Memo_${memo.title.replace(/\s+/g, '_')}.png`;
+          link.href = dataUrl;
+          link.click();
+          setSuccessMessage(t('imageDownloaded'));
+        } catch (err) {
+          console.error('Failed to generate image', err);
+        } finally {
+          element.setAttribute('style', originalStyle);
+          setSharingMemo(null);
+        }
+      }, 50);
+    };
+
+    const handleSharePDF = async (memo: any) => {
+      // Create a hidden print iframe for real, editable, and uncropped PDF generation
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0px';
+      iframe.style.height = '0px';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow?.document;
+      if (!iframeDoc) return;
+
+      const formattedDate = memo.createdAt ? format(new Date(memo.createdAt), 'MMMM d, yyyy') : '';
+      const totalItems = memo.items.length;
       
-      const link = document.createElement('a');
-      link.download = `Market_Memo_${memo.title.replace(/\s+/g, '_')}.png`;
-      link.href = dataUrl;
-      link.click();
-      setSuccessMessage(t('imageDownloaded'));
-    } catch (err) {
-      console.error('Failed to generate image', err);
-    } finally {
-      element.setAttribute('style', originalStyle);
-      setSharingMemo(null);
-    }
-  };
+      const rowsHTML = memo.items.map((item: any, idx: number) => `
+        <tr>
+          <td style="text-align: center; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; color: #4b5563;">${idx + 1}</td>
+          <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 16px; color: #111827; font-weight: 600;">${item.name}</td>
+          <td style="text-align: center; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; color: #4b5563;">${item.quantity} ${t(item.unit)}</td>
+          <td style="text-align: right; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; color: #4b5563;">${currencySymbol}${item.unitPrice}</td>
+          <td style="text-align: right; border-bottom: 1px solid #e5e7eb; padding: 12px 16px; color: #111827; font-weight: 700;">${currencySymbol}${item.total}</td>
+        </tr>
+      `).join('');
 
-  const handleSharePDF = async (memo: any) => {
-    const element = document.getElementById(`memo-capture-${memo.id}`);
-    if (!element) return;
-    
-    // Ensure element is visible for capture
-    const originalStyle = element.getAttribute('style') || '';
-    element.style.display = 'block';
-    element.style.position = 'fixed';
-    element.style.left = '-9999px';
-    element.style.top = '0';
-    element.style.visibility = 'visible';
-    
-    try {
-      const canvas = await html2canvas(element, { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: true
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`Market_Memo_${memo.title.replace(/\s+/g, '_')}.pdf`);
-      setSuccessMessage(t('pdfDownloaded'));
-    } catch (err) {
-      console.error('Failed to generate PDF', err);
-    } finally {
-      element.setAttribute('style', originalStyle);
-      setSharingMemo(null);
-    }
-  };
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${memo.title || 'Market_Memo'}</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+              
+              body { 
+                font-family: 'Hind Siliguri', sans-serif; 
+                background-color: white; 
+                margin: 0;
+                padding: 0;
+                color: #111827;
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+              }
+              @page { margin: 15mm; size: auto; }
+              
+              .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px 0;
+              }
+              
+              .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 3px solid #4f46e5;
+                padding-bottom: 24px;
+                margin-bottom: 32px;
+              }
+              
+              .brand h1 {
+                margin: 0;
+                font-size: 32px;
+                color: #4f46e5;
+                font-weight: 700;
+              }
+              .brand p {
+                margin: 4px 0 0;
+                font-size: 14px;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
+              }
+              
+              .memo-info {
+                text-align: right;
+              }
+              .memo-info h2 {
+                margin: 0 0 8px;
+                font-size: 24px;
+                color: #111827;
+                font-weight: 700;
+              }
+              .memo-info p {
+                margin: 4px 0 0;
+                color: #4b5563;
+                font-size: 15px;
+              }
+              
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 32px;
+              }
+              th {
+                background-color: #f3f4f6;
+                color: #374151;
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 13px;
+                padding: 14px 16px;
+                border-bottom: 2px solid #d1d5db;
+              }
+              
+              .summary {
+                display: flex;
+                justify-content: flex-end;
+              }
+              .summary-box {
+                width: 320px;
+                background-color: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 24px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                page-break-inside: avoid;
+              }
+              .summary-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 12px;
+                font-size: 15px;
+                color: #4b5563;
+              }
+              .summary-row.total {
+                margin-bottom: 0;
+                padding-top: 16px;
+                margin-top: 12px;
+                border-top: 2px dashed #d1d5db;
+                font-size: 20px;
+                font-weight: 800;
+                color: #4f46e5;
+              }
+              
+              .footer {
+                margin-top: 60px;
+                text-align: center;
+                color: #9ca3af;
+                font-size: 13px;
+                padding-top: 24px;
+                border-top: 1px solid #f3f4f6;
+                page-break-inside: avoid;
+              }
+              .footer div { width: 40px; height: 4px; background: #e5e7eb; margin: 0 auto 16px; border-radius: 2px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="brand">
+                  <h1>📋 ${t('marketMemoTitle')}</h1>
+                  <p>Life Manager Pro Receipts</p>
+                </div>
+                <div class="memo-info">
+                  <h2>${memo.title}</h2>
+                  <p><strong>${t('date')}:</strong> ${formattedDate}</p>
+                  <p><strong>Total Items:</strong> ${totalItems}</p>
+                </div>
+              </div>
+              
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align: center; width: 8%;">#</th>
+                    <th style="text-align: left; width: 42%;">${t('item')}</th>
+                    <th style="text-align: center; width: 15%;">${t('qty')}</th>
+                    <th style="text-align: right; width: 15%;">${t('price')}</th>
+                    <th style="text-align: right; width: 20%;">${t('total')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHTML}
+                </tbody>
+              </table>
+              
+              <div class="summary">
+                <div class="summary-box">
+                  <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>${currencySymbol}${memo.totalAmount}</span>
+                  </div>
+                  <div class="summary-row total">
+                    <span>${t('total')}</span>
+                    <span>${currencySymbol}${memo.totalAmount}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="footer">
+                <div></div>
+                <p><strong>Thank you for using Life Manager Pro!</strong></p>
+                <p>Designed  & Developed by Asadullah Al Galib</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+      iframeDoc.close();
 
-  const handleShareLink = async (memo: any) => {
+      setSuccessMessage(t('pdf') + ' Loading...'); // Temporary indicator
+
+      // Wait for fonts and styles to render before triggering the print dialog
+      setTimeout(() => {
+        if (iframe.contentWindow) {
+           iframe.contentWindow.focus();
+           iframe.contentWindow.print();
+        }
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+          setSharingMemo(null);
+          setSuccessMessage(null);
+        }, 1000);
+      }, 500);
+    };
+
+    const handleShareLink = async (memo: any) => {
     if (!user) return;
-    
+    setSharingMemo(memo.id);
     let url = '';
     try {
       // Generate a shorter ID for the shared memo (8 characters)
@@ -215,12 +432,10 @@ export const MarketMemo: React.FC = () => {
           title: memo.title,
           url: url
         }).catch((e) => {
-          navigator.clipboard.writeText(url);
-          setSuccessMessage(t('linkCopied'));
+          copyToClipboard(url, t('linkCopied') || 'Link copied!');
         });
       } else {
-        navigator.clipboard.writeText(url);
-        setSuccessMessage(t('linkCopied'));
+        copyToClipboard(url, t('linkCopied') || 'Link copied!');
       }
     } catch (err) {
       console.error("Clipboard error:", err);
@@ -721,7 +936,10 @@ export const MarketMemo: React.FC = () => {
         {memos.map(memo => (
           <div key={memo.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
             <div className="flex justify-between items-start mb-4">
-              <div>
+              <div 
+                onClick={() => handleEditMemo(memo)}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              >
                 <h3 className="font-bold text-lg text-gray-900 dark:text-white">{memo.title}</h3>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   {memo.createdAt ? format(new Date(memo.createdAt), 'MMM d, yyyy h:mm a') : ''}
@@ -738,9 +956,9 @@ export const MarketMemo: React.FC = () => {
                 <button 
                   onClick={() => handleEditMemo(memo)} 
                   className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                  title={t('editMemo')}
+                  title="কেনাকাটা / এডিট"
                 >
-                  <Edit2 size={18} />
+                  <ShoppingCart size={18} />
                 </button>
                 <button 
                   onClick={() => handleDeleteMemo(memo.id)} 

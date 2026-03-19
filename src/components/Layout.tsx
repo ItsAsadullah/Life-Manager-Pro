@@ -6,6 +6,7 @@ import { LayoutDashboard, StickyNote, Receipt, ScanLine, Bot, Image as ImageIcon
 import { QuickActionFAB } from './QuickActionFAB';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
+import hisabNikashLogo from './images/Hisab Nikash.png';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -33,10 +34,10 @@ export const Layout: React.FC = () => {
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-10 dark:bg-gray-800 dark:border-gray-700">
         <div className="h-20 flex items-center px-8 border-b border-gray-100 dark:border-gray-700">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-3 shadow-md shadow-indigo-200 dark:shadow-none">
-            <LayoutDashboard size={18} className="text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-white">Hishab <span className="text-indigo-600">Nikash</span></h1>
+            <div className="w-8 h-8 flex items-center justify-center mr-3">
+              <img src={hisabNikashLogo} alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-white">Hisab <span className="text-indigo-600">Nikash</span></h1>
         </div>
         <nav className="flex-1 overflow-y-auto py-6">
           <ul className="space-y-1.5 px-4">
@@ -82,9 +83,7 @@ export const Layout: React.FC = () => {
         {/* Mobile Header (No Hamburger) */}
         <header className="md:hidden h-16 bg-[#f7f9fc] flex items-center justify-between px-4 dark:bg-gray-800 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-blue-500 rounded flex items-center justify-center transform -skew-x-12">
-               <span className="text-blue-500 font-bold text-xs transform skew-x-12">HN</span>
-            </div>
+            <img src={hisabNikashLogo} alt="Logo" className="w-8 h-8 object-contain" />
             <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400">হিসাব নিকাশ</h1>
           </div>
           

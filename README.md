@@ -36,3 +36,26 @@ For true native-like scheduled reminders, add a backend scheduler (Cloud Functio
 - Finds due reminders by time/timezone
 - Sends FCM message to stored token
 - Includes `title`, `body`, and optional `click_action`
+
+## Android Native Push (Capacitor) - Phase 1
+
+This project is now scaffolded for Android native push with Capacitor.
+
+### One-time setup
+
+1. Download `google-services.json` from Firebase Console for Android app id `com.hisabnikash.app`.
+2. Place it at: `android/app/google-services.json`.
+3. Build and sync native assets:
+   `npm run build:cap`
+
+### VS Code workflow
+
+- Sync Android after code changes: `npm run cap:sync`
+- Copy web assets only: `npm run cap:copy`
+- Run on connected Android device/emulator: `npm run android:run`
+
+### Token behavior
+
+- Web browser/PWA writes `push.source = web-fcm`
+- Native Android app writes `push.source = native-fcm`
+- Both store token at `users/{uid}.push.token`

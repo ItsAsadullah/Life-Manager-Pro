@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, signInWithCredential, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { auth, db } from '../lib/firebase';
 import { registerUserPushToken } from '../lib/pushNotifications';
 
@@ -52,7 +54,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        const nativeResult = await FirebaseAuthentication.signInWithGoogle({
+          useCredentialManager: false,
+        });
+        const idToken = nativeResult.credential?.idToken;
+        const accessToken = nativeResult.credential?.accessToken;
+
+        if (!idToken && !accessToken) {
+          throw new Error('Native Google sign-in did not return a Firebase credential token.');
+        }
+
+        const firebaseCredential = GoogleAuthProvider.credential(idToken || undefined, accessToken || undefined);
+        await signInWithCredential(auth, firebaseCredential);
+        return;
+      }
+
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error: any) {
+        if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/popup-closed-by-user') {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw error;
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       throw error;

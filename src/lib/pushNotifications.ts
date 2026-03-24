@@ -1,7 +1,9 @@
 import { doc, setDoc } from 'firebase/firestore';
 import { db, getFirebaseMessagingConfig, getPushNotificationToken, isPushNotificationsSupported } from './firebase';
+import { isNativePushRuntime, registerNativePushToken } from './nativePush';
 
 export const registerPushServiceWorker = async () => {
+  if (isNativePushRuntime()) return null;
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
 
   const config = getFirebaseMessagingConfig();
@@ -19,6 +21,10 @@ export const registerPushServiceWorker = async () => {
 };
 
 export const registerUserPushToken = async (uid: string) => {
+  if (isNativePushRuntime()) {
+    return registerNativePushToken(uid);
+  }
+
   const supported = await isPushNotificationsSupported();
   if (!supported) {
     return { ok: false as const, reason: 'unsupported' as const };
@@ -44,6 +50,7 @@ export const registerUserPushToken = async (uid: string) => {
       push: {
         token,
         enabled: true,
+        source: 'web-fcm',
         updatedAt: new Date().toISOString(),
         userAgent: navigator.userAgent,
       },

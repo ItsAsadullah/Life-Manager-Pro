@@ -3,6 +3,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { registerUserPushToken } from '../lib/pushNotifications';
+import { checkNativeNotificationPermission, isNativePushRuntime, requestNativeNotificationPermission } from '../lib/nativePush';
 
 type Currency = 'BDT' | 'INR' | 'USD';
 type Language = 'bn' | 'en';
@@ -573,6 +574,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const notificationTimes = notificationReminders.filter((item) => item.enabled).map((item) => item.time);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+    if (isNativePushRuntime()) return 'default';
     if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
     return Notification.permission;
   });
@@ -609,6 +611,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }).catch(err => console.error('Failed to sync reminders:', err));
     }
   }, [notificationReminders, notificationTimes]);
+
+  useEffect(() => {
+    if (!isNativePushRuntime()) return;
+
+    checkNativeNotificationPermission()
+      .then((permission) => setNotificationPermission(permission))
+      .catch((error) => console.error('Native permission sync failed:', error));
+  }, []);
 
   useEffect(() => {
     // Ensure light mode on mount if theme is light
@@ -675,6 +685,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const requestNotificationPermission = async (): Promise<NotificationPermission | 'unsupported'> => {
+    if (isNativePushRuntime()) {
+      const permission = await requestNativeNotificationPermission();
+      setNotificationPermission(permission);
+      if (permission === 'granted' && auth.currentUser) {
+        registerUserPushToken(auth.currentUser.uid).catch((error) => {
+          console.error('Native push token registration failed:', error);
+        });
+      }
+      if (permission !== 'granted') {
+        setNotificationsEnabledState(false);
+      }
+      return permission;
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setNotificationPermission('unsupported');
       return 'unsupported';
@@ -693,6 +717,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const sendTestNotification = () => {
+    if (isNativePushRuntime()) {
+      console.info('Use FCM test message from Firebase Console for native test notification.');
+      return;
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (notificationPermission !== 'granted') return;
     new Notification(translations[language].notificationTitle, {
@@ -722,6 +751,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
+    if (isNativePushRuntime()) return;
     if (typeof window === 'undefined' || !('Notification' in window)) return;
 
     const timers: number[] = [];

@@ -23,7 +23,13 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorized in Firebase. Please add your Vercel domain to the "Authorized domains" list in the Firebase Console.');
+        setError('This domain is not authorized in Firebase. In Firebase Console → Authentication → Settings → Authorized domains, add localhost and your web domain.');
+      } else if ((err.message || '').toLowerCase().includes('no credentials available')) {
+        setError('No Google credential found on this device. Please choose a Google account from the account picker and try again.');
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/credential-already-in-use') {
+        setError('Google credential validation failed. In Firebase Console enable Google sign-in and ensure this app package is registered correctly.');
+      } else if (err.code === 'auth/operation-not-supported-in-this-environment') {
+        setError('Google popup is not supported in this environment. Redirect sign-in is enabled, please try again.');
       } else if (err.code === 'auth/popup-blocked') {
         setError('Login popup was blocked by your browser. Please allow popups for this site.');
       } else {

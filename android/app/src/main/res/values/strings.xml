@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Life Manager Pro</string>
+    <string name="title_activity_main">Life Manager Pro</string>
+    <string name="package_name">com.hisabnikash.app</string>
+    <string name="custom_url_scheme">com.hisabnikash.app</string>
+</resources>

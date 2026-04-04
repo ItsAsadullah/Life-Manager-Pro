@@ -9,7 +9,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, FileText, CalendarDays } from 'lu
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { t, currencySymbol } = useSettings();
+  const { t, currencySymbol, language } = useSettings();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
@@ -83,17 +83,17 @@ export const Dashboard: React.FC = () => {
         <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
         
         <div className="relative z-10 flex flex-col items-center text-center">
-           <span className="text-blue-100 text-sm font-medium mb-1 drop-shadow-sm">{currentMonthNameBn} মাসের হিসাব</span>
+           <span className="text-blue-100 text-sm font-medium mb-1 drop-shadow-sm">{language === 'bn' ? `${currentMonthNameBn} মাসের হিসাব` : `${currentMonthName} Account`}</span>
            <div className="flex items-center space-x-6 mb-4 mt-2">
              <div className="flex flex-col items-center">
-               <span className="text-xs text-blue-100 mb-1">আয়</span>
+               <span className="text-xs text-blue-100 mb-1">{t('income')}</span>
                <h2 className="text-2xl font-bold tracking-tight drop-shadow-md text-emerald-300">
                  {currencySymbol}{totalIncome.toLocaleString()}
                </h2>
              </div>
              <div className="w-px h-8 bg-blue-400/50"></div>
              <div className="flex flex-col items-center">
-               <span className="text-xs text-blue-100 mb-1">ব্যয়</span>
+               <span className="text-xs text-blue-100 mb-1">{t('expense')}</span>
                <h2 className="text-2xl font-bold tracking-tight drop-shadow-md text-rose-300">
                  {currencySymbol}{totalExpense.toLocaleString()}
                </h2>
@@ -104,7 +104,7 @@ export const Dashboard: React.FC = () => {
              <div className="flex flex-col items-center flex-1 border-r border-white/20">
                 <div className="flex items-center text-red-200 mb-1">
                   <ArrowDownRight size={14} className="mr-1" />
-                  <span className="text-xs font-semibold">আমি দেবো</span>
+                  <span className="text-xs font-semibold">{t('borrowed')}</span>
                 </div>
                 <span className="text-lg font-bold">{currencySymbol}{totalBorrowed.toLocaleString()}</span>
              </div>
@@ -112,7 +112,7 @@ export const Dashboard: React.FC = () => {
              <div className="flex flex-col items-center flex-1">
                 <div className="flex items-center text-green-200 mb-1">
                   <ArrowUpRight size={14} className="mr-1" />
-                  <span className="text-xs font-semibold">আমি পাবো</span>
+                  <span className="text-xs font-semibold">{t('lent')}</span>
                 </div>
                 <span className="text-lg font-bold">{currencySymbol}{totalLent.toLocaleString()}</span>
              </div>
@@ -136,7 +136,7 @@ export const Dashboard: React.FC = () => {
             <CalendarDays size={22} className="fill-current opacity-20" />
           </div>
           <div>
-            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none dark:text-gray-500">লেনদেন</h3>
+            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none dark:text-gray-500">{t('recentTransactions')}</h3>
             <p className="text-xl font-bold text-gray-900 dark:text-white mt-1 leading-none">{expenses.length}</p>
           </div>
         </div>

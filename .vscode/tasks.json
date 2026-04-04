@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run missing keys",
+			"type": "shell",
+			"command": "node find_missing_keys.js",
+			"isBackground": false,
+			"group": "test"
+		}
+	]
+}

@@ -69,7 +69,7 @@ useEffect(() => {
   const [personImage, setPersonImage] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [personDate, setPersonDate] = useState(new Date().toISOString().split('T')[0]);
-  const [personAccount, setPersonAccount] = useState(t('cash') || 'Cash');
+  const [personAccount, setPersonAccount] = useState('${t('cash') || 'Cash'}');
 
   // Add Transaction Modal States
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -77,7 +77,7 @@ useEffect(() => {
   const [trxAmount, setTrxAmount] = useState('');
   const [trxNote, setTrxNote] = useState('');
   const [trxDate, setTrxDate] = useState(new Date().toISOString().split('T')[0]);
-  const [trxAccount, setTrxAccount] = useState(t('cash') || 'Cash');
+  const [trxAccount, setTrxAccount] = useState('${t('cash') || 'Cash'}');
   const [editingTrxId, setEditingTrxId] = useState<string | null>(null);
 
   // Repayments for selected person
@@ -371,7 +371,7 @@ useEffect(() => {
     } catch (err) {
       console.error("Error generating PDF:", err);
       // Removed the hardcoded alert right here as per convention, or use t()
-      alert(t('errorGeneratingPDF') || "Error generating PDF!");
+      alert(t('errorGeneratingPDF') || "PDF তৈরি করতে সমস্যা হয়েছে!");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -455,7 +455,7 @@ useEffect(() => {
             <div className={`p-4 rounded-xl shadow-sm border flex items-center justify-between ${selectedPerson.type === 'lent' ? 'bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-800/30 text-green-700 dark:text-green-400' : 'bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-800/30 text-red-700 dark:text-red-400'}`}>
               <div className="flex items-center gap-2 font-bold">
                 {selectedPerson.type === 'lent' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
-                <span>{selectedPerson.type === 'lent' ? t('willGet') : t('willGive')}</span>
+                <span>{selectedPerson.type === 'lent' ? '{t('willGet')}' : '{t('willGive')}'}</span>
               </div>
               <div className="text-xl font-bold">
                 {currencySymbol} {selectedPerson.amount.toLocaleString()}
@@ -466,7 +466,7 @@ useEffect(() => {
           {selectedPerson.amount === 0 && (
              <div className="p-4 rounded-xl shadow-sm border bg-gray-50 border-gray-200 dark:bg-gray-800 text-gray-600 dark:border-gray-700 flex items-center justify-between">
                 <div className="font-bold flex items-center gap-2"><Check size={20}/> {t('balanceIsEqual') || 'Balance Even'}</div>
-                <div className="text-xl font-bold">৳ 0</div>
+                <div className="text-xl font-bold">৳ ০</div>
              </div>
           )}
           </div>
@@ -485,7 +485,7 @@ useEffect(() => {
                     {rep.type === 'got' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{rep.type === 'got' ? (t('got') || 'Got') : (t('gave') || 'Gave')}</h3>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100">{rep.type === 'got' ? '{t('got') || 'Got'}' : '{t('gave') || 'Gave'}'}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(rep.createdAt).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit' })}</p>
                     {rep.note && <p className="text-xs text-gray-600 mt-0.5">{rep.note}</p>}
                   </div>
@@ -526,7 +526,7 @@ useEffect(() => {
                          onClick={async (e) => {
                           e.stopPropagation();
                           setActiveMenuId(null);
-                          if(window.confirm(t('confirmDeleteTransaction') || 'Delete transaction?')) {
+                          if(window.confirm('${t('confirmDeleteTransaction') || 'Delete transaction?'}')) {
                              try {
                                await deleteDoc(doc(db, 'users', user!.uid, 'debts', selectedPerson.id, 'repayments', rep.id));
                                  await syncPersonBalance(selectedPerson.id);
@@ -593,13 +593,13 @@ useEffect(() => {
                 {/* Amount */}
                 <div className="relative border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">@</span>
-                  <input required type="number" step="any" value={trxAmount} onChange={e => setTrxAmount(e.target.value)} placeholder={t('amount') || 'Amount'} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                  <input required type="number" step="any" value={trxAmount} onChange={e => setTrxAmount(e.target.value)} placeholder="${t('amount') || 'Amount'}" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
                 </div>
                 
                 {/* Details */}
                 <div className="relative border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
                   <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input type="text" value={trxNote} onChange={e => setTrxNote(e.target.value)} placeholder={t('details') || 'Details'} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                  <input type="text" value={trxNote} onChange={e => setTrxNote(e.target.value)} placeholder="${t('details') || 'Details'}" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
                 </div>
 
                 {/* Date */}
@@ -702,7 +702,7 @@ useEffect(() => {
                     {debt.amount}
                  </div>
                ) : (
-                 <div className="text-sm font-bold text-gray-400">0</div>
+                 <div className="text-sm font-bold text-gray-400">০</div>
                )}
                {/* Dot Indicator */}
                {debt.amount > 0 ? (
@@ -745,7 +745,7 @@ useEffect(() => {
                          onClick={async (e) => {
                           e.stopPropagation();
                           setActiveMenuId(null);
-                          if(window.confirm(t('confirmDelete') || 'Are you sure?')) {
+                          if(window.confirm('${t('confirmDelete') || 'Are you sure?'}')) {
                              try {
                                await deleteDoc(doc(db, 'users', user!.uid, 'debts', debt.id));
                              } catch(err) { console.error(err) }
@@ -802,19 +802,19 @@ useEffect(() => {
               {/* Name */}
               <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
                 <UserRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input required type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder={t('name') || 'Name'} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                <input required type="text" value={personName} onChange={e => setPersonName(e.target.value)} placeholder="${t('name') || 'Name'}" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
               </div>
               
               {/* Mobile */}
               <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
                 <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder={t('phoneOptional') || 'Phone'} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                <input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="${t('phoneOptional') || 'Phone'}" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
               </div>
 
               {/* Address */}
               <div className="relative border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 bg-white dark:bg-gray-800">
                 <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                <input type="text" value={personAddress} onChange={e => setPersonAddress(e.target.value)} placeholder={t('addressOptional') || 'Address'} className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
+                <input type="text" value={personAddress} onChange={e => setPersonAddress(e.target.value)} placeholder="${t('addressOptional') || 'Address'}" className="w-full bg-transparent border-none py-3.5 pl-12 pr-4 text-sm font-medium dark:text-white focus:ring-0 outline-none placeholder-gray-400" />
               </div>
 
               {/* Date */}

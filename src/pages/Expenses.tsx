@@ -12,7 +12,7 @@ import { SwipeableNumberInput } from '../components/SwipeableNumberInput';
 
 export const Expenses: React.FC = () => {
   const { user } = useAuth();
-  const { t, currencySymbol } = useSettings();
+  const { t, currencySymbol, language } = useSettings();
   const location = useLocation();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -282,19 +282,19 @@ export const Expenses: React.FC = () => {
           <div className="flex-1 flex flex-col items-center border-r border-gray-200 dark:border-gray-700">
              <div className="flex items-center text-xs text-gray-500 mb-1">
                <TrendingUp size={12} className="text-green-500 mr-1" />
-               "আয়" গত মাস থেকে
+               "{t('income')}" {t('sinceLastMonth')}
              </div>
              <span className={`text-sm font-bold ${incomeChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-               {incomeChange > 0 ? '+' : ''}{incomeChange}% {incomeChange >= 0 ? 'বেশি' : 'কম'}
+               {incomeChange > 0 ? '+' : ''}{incomeChange}% {incomeChange >= 0 ? t('moreFilter') : t('lessFilter')}
              </span>
           </div>
           <div className="flex-1 flex flex-col items-center">
              <div className="flex items-center text-xs text-gray-500 mb-1">
                <TrendingDown size={12} className="text-red-500 mr-1" />
-               "ব্যয়" গত মাস থেকে
+               "{t('expense')}" {t('sinceLastMonth')}
              </div>
              <span className={`text-sm font-bold ${expenseChange <= 0 ? 'text-green-500' : 'text-red-500'}`}>
-               {expenseChange > 0 ? '+' : ''}{expenseChange}% {expenseChange >= 0 ? 'বেশি' : 'কম'}
+               {expenseChange > 0 ? '+' : ''}{expenseChange}% {expenseChange >= 0 ? t('moreFilter') : t('lessFilter')}
              </span>
           </div>
           <button onClick={() => setShowMonthCompare(false)} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
@@ -310,27 +310,27 @@ export const Expenses: React.FC = () => {
              onClick={() => setViewMode('month')}
              className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'month' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
            >
-             {currentMonthNameBn}
+             {language === 'bn' ? currentMonthNameBn : currentDate.toLocaleString('en-US', { month: 'long' })}
            </button>
            <button 
              onClick={() => setViewMode('total')}
              className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${viewMode === 'total' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
            >
-             মোট
+             {t('total')}
            </button>
         </div>
 
         <div className="flex justify-between items-center px-8 text-center">
            <div>
-             <p className="text-xs text-green-500 mb-1 font-medium">আয়</p>
+             <p className="text-xs text-green-500 mb-1 font-medium">{t('income')}</p>
              <p className="text-lg font-bold text-green-500">{totalIncome > 0 ? `${currencySymbol}${totalIncome}` : '0'}</p>
            </div>
            <div>
-             <p className="text-xs text-red-500 mb-1 font-medium">ব্যয়</p>
+             <p className="text-xs text-red-500 mb-1 font-medium">{t('expense')}</p>
              <p className="text-lg font-bold text-red-500">{totalExpense > 0 ? `${currencySymbol}${totalExpense}` : '0'}</p>
            </div>
            <div>
-             <p className="text-xs text-blue-500 mb-1 font-medium">ব্যালেন্স</p>
+             <p className="text-xs text-blue-500 mb-1 font-medium">{t('balance')}</p>
              <p className="text-lg font-bold text-blue-500">{balance !== 0 ? `${currencySymbol}${balance}` : '0'}</p>
            </div>
         </div>
@@ -344,19 +344,19 @@ export const Expenses: React.FC = () => {
                onClick={() => setTypeFilter('all')}
                className={`flex-1 py-2 rounded-xl transition-all ${typeFilter === 'all' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}
              >
-               সব
+               {t('all')}
              </button>
              <button 
                onClick={() => setTypeFilter('income')}
                className={`flex-1 py-2 rounded-xl transition-all ${typeFilter === 'income' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}
              >
-               আয়
+               {t('income')}
              </button>
              <button 
                onClick={() => setTypeFilter('expense')}
                className={`flex-1 py-2 rounded-xl transition-all ${typeFilter === 'expense' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}
              >
-               ব্যয়
+               {t('expense')}
              </button>
           </div>
           <div className="flex space-x-1 px-2 text-gray-400 relative">
@@ -380,11 +380,11 @@ export const Expenses: React.FC = () => {
               </button>
               {showFilterMenu && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 py-2">
-                  <div className="px-4 py-1 text-xs font-semibold text-gray-500">সর্ট করুন</div>
-                  <button onClick={() => { setSortOrder('newest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'newest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>নতুন থেকে পুরনো</button>
-                  <button onClick={() => { setSortOrder('oldest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'oldest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>পুরনো থেকে নতুন</button>
-                  <button onClick={() => { setSortOrder('highest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'highest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>অ্যামাউন্ট (বেশি থেকে কম)</button>
-                  <button onClick={() => { setSortOrder('lowest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'lowest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>অ্যামাউন্ট (কম থেকে বেশি)</button>
+                  <div className="px-4 py-1 text-xs font-semibold text-gray-500">Sort</div>
+                  <button onClick={() => { setSortOrder('newest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'newest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>{t('newestFirst')}</button>
+                  <button onClick={() => { setSortOrder('oldest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'oldest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>{t('oldestFirst')}</button>
+                  <button onClick={() => { setSortOrder('highest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'highest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>{t('highest')}</button>
+                  <button onClick={() => { setSortOrder('lowest'); setShowFilterMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${sortOrder === 'lowest' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>{t('lowest')}</button>
                 </div>
               )}
             </div>
@@ -397,8 +397,8 @@ export const Expenses: React.FC = () => {
               </button>
               {showCategoryMenu && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 py-2 max-h-64 overflow-y-auto">
-                  <div className="px-4 py-1 text-xs font-semibold text-gray-500">ক্যাটাগরি ফিল্টার</div>
-                  <button onClick={() => { setCategoryFilter('all'); setShowCategoryMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${categoryFilter === 'all' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>সব ক্যাটাগরি</button>
+                  <div className="px-4 py-1 text-xs font-semibold text-gray-500">{t('category')}</div>
+                  <button onClick={() => { setCategoryFilter('all'); setShowCategoryMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${categoryFilter === 'all' ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>{t('allCategories')}</button>
                   {uniqueCategories.map(cat => (
                     <button key={String(cat)} onClick={() => { setCategoryFilter(String(cat)); setShowCategoryMenu(false); }} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${categoryFilter === cat ? 'text-blue-500 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>
                       {t(String(cat))}
@@ -416,13 +416,13 @@ export const Expenses: React.FC = () => {
                   onClick={() => { setIsManagingCategories(true); setShowMoreMenu(false); }} 
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  ক্যাটাগরি তৈরি/ডিলিট করুন
+                  {t('manageCategoriesTooltip')}
                 </button>
                 <button 
                   onClick={() => { setShowGraphView(true); setShowMoreMenu(false); }} 
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  গ্রাফ দেখুন
+                  {t('viewGraph')}
                 </button>
                 <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
                 <button 
@@ -430,14 +430,14 @@ export const Expenses: React.FC = () => {
                   className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <CheckSquare size={16} className={`mr-2 ${showSearchBox ? 'text-blue-500' : 'text-gray-300'}`} />
-                  সার্চ বক্স দেখান
+                  {t('showSearchBox')}
                 </button>
                 <button 
                   onClick={() => setShowMonthCompare(!showMonthCompare)}
                   className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <CheckSquare size={16} className={`mr-2 ${showMonthCompare ? 'text-blue-500' : 'text-gray-300'}`} />
-                  মাসিক পার্সেন্টেজ দেখান
+                  {t('showMonthlyPercentage')}
                 </button>
               </div>
             )}
@@ -454,7 +454,7 @@ export const Expenses: React.FC = () => {
                 const convertedValue = e.target.value.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
                 setSearchQuery(convertedValue);
               }}
-              placeholder="সার্চ..." 
+              placeholder={t('search')}
               className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-2xl py-3 pl-10 pr-4 text-sm focus:ring-0 text-gray-600 placeholder-gray-300 dark:text-gray-300 dark:placeholder-gray-600 focus:outline-none"
             />
           </div>
@@ -467,7 +467,7 @@ export const Expenses: React.FC = () => {
           <div className="h-full flex flex-col items-center justify-center text-gray-300 dark:text-gray-600 mt-10">
             <Receipt size={60} strokeWidth={1} className="mb-4" />
             <p className="text-sm">{currentDate.toLocaleString('bn-BD', { month: 'long', year: 'numeric' })}</p>
-            <p className="text-sm font-medium">মাসে কোন লেনদেন নেই</p>
+            <p className="text-sm font-medium">{t('noTransactionsThisMonth')}</p>
           </div>
         ) : (
           <div className="space-y-5 mt-4">
@@ -699,7 +699,7 @@ export const Expenses: React.FC = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">ক্যাটাগরি ম্যানেজ করুন</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('manageCategoriesTitle')}</h3>
               <button onClick={() => setIsManagingCategories(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
@@ -715,7 +715,7 @@ export const Expenses: React.FC = () => {
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  ব্যয় (Expense)
+                  {t('expense')}
                 </button>
                 <button
                   onClick={() => setManageCategoryTab('income')}
@@ -725,7 +725,7 @@ export const Expenses: React.FC = () => {
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  আয় (Income)
+                  {t('income')}
                 </button>
               </div>
 
@@ -734,7 +734,7 @@ export const Expenses: React.FC = () => {
                   type="text"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="নতুন ক্যাটাগরির নাম..."
+                  placeholder={t('newCategoryPlaceholder')}
                   className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-l-xl py-2 px-4 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white"
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                 />
@@ -743,7 +743,7 @@ export const Expenses: React.FC = () => {
                   disabled={!newCategoryName.trim()}
                   className="bg-blue-500 text-white px-4 rounded-r-xl font-medium hover:bg-blue-600 disabled:opacity-50"
                 >
-                  যোগ করুন
+                  {t('addBtn')}
                 </button>
               </div>
 
@@ -842,7 +842,7 @@ export const Expenses: React.FC = () => {
             <div className="p-4 space-y-6">
                {/* Account Calendar */}
                <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                 <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-4">হিসাব ক্যালেন্ডার</h3>
+                 <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-4">{t('ledgerCalendar')}</h3>
                  <div className="grid grid-cols-7 gap-2 text-center text-sm mb-5">
                     {Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => {
                        const day = i + 1;
@@ -869,9 +869,9 @@ export const Expenses: React.FC = () => {
                  </div>
                  {/* Legends */}
                  <div className="flex justify-center gap-5 text-xs">
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-blue-100 dark:bg-blue-900/60 shadow-sm"></div><span className="text-gray-600 dark:text-gray-400 font-medium">হিসাব আছে</span></div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-gray-50 dark:bg-gray-700/50"></div><span className="text-gray-600 dark:text-gray-400">হিসাব নেই</span></div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-transparent text-gray-300 dark:text-gray-600/50 flex flex-col justify-center">■</div><span className="text-gray-400 dark:text-gray-500">আসেনি</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-blue-100 dark:bg-blue-900/60 shadow-sm"></div><span className="text-gray-600 dark:text-gray-400 font-medium">{t('hasLedger')}</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-gray-50 dark:bg-gray-700/50"></div><span className="text-gray-600 dark:text-gray-400">{t('noLedger')}</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-md bg-transparent text-gray-300 dark:text-gray-600/50 flex flex-col justify-center">■</div><span className="text-gray-400 dark:text-gray-500">{t('didNotCome')}</span></div>
                  </div>
                </div>
 
@@ -881,22 +881,22 @@ export const Expenses: React.FC = () => {
                    <div className="w-8 h-8 mx-auto bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mb-2">
                      <ArrowDownCircle size={18} className="text-green-500" />
                    </div>
-                   <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">মোট আয়</p>
-                   <p className="text-sm font-bold text-green-600 dark:text-green-400">{totalIncome.toLocaleString('bn-BD')}</p>
+                   <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">{t('total')} {t('income')}</p>
+                   <p className="text-sm font-bold text-green-600 dark:text-green-400">{totalIncome.toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}</p>
                  </div>
                  <div className="bg-red-50/80 dark:bg-red-900/20 p-3 rounded-2xl text-center border border-red-100/50 dark:border-red-800/30">
                     <div className="w-8 h-8 mx-auto bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mb-2">
                       <ArrowUpCircle size={18} className="text-red-500" />
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">মোট ব্যয়</p>
-                    <p className="text-sm font-bold text-red-600 dark:text-red-400">{totalExpense.toLocaleString('bn-BD')}</p>
+                   </div>
+                   <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">{t('total')} {t('expense')}</p>
+                   <p className="text-sm font-bold text-red-600 dark:text-red-400">{totalExpense.toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}</p>
                  </div>
                  <div className="bg-blue-50/80 dark:bg-blue-900/20 p-3 rounded-2xl text-center border border-blue-100/50 dark:border-blue-800/30">
                     <div className="w-8 h-8 mx-auto bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mb-2">
                       <Receipt size={18} className="text-blue-500" />
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">ব্যালেন্স</p>
-                    <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{balance.toLocaleString('bn-BD')}</p>
+                   </div>
+                   <p className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-400 mb-1">{t('balance')}</p>
+                   <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{balance.toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}</p>
                  </div>
                </div>
 
@@ -906,26 +906,26 @@ export const Expenses: React.FC = () => {
                    onClick={() => setGraphTab('income')} 
                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${graphTab === 'income' ? 'bg-green-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                  >
-                   আয়
+                   {t('income')}
                  </button>
-                 <button 
-                   onClick={() => setGraphTab('expense')} 
+                 <button
+                   onClick={() => setGraphTab('expense')}
                    className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${graphTab === 'expense' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                  >
-                   ব্যয়
+                   {t('expense')}
                  </button>
                </div>
 
                {/* Categories List */}
                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-                 <h3 className="text-base font-bold text-gray-800 dark:text-white mb-5">ক্যাটাগরি অনুযায়ী হিসাব</h3>
+                 <h3 className="text-base font-bold text-gray-800 dark:text-white mb-5">{t('ledgerByCategory')}</h3>
                  <div className="space-y-4">
                     {(() => {
                        const data = filteredByViewMode.filter(item => item.type === graphTab);
                        const grouped: Record<string, number> = {};
                        let total = 0;
                        data.forEach(item => {
-                          const catName = t(graphTab === 'expense' ? item.category : item.source) || 'অন্যান্য';
+                          const catName = t(graphTab === 'expense' ? item.category : item.source) || t('other');
                           grouped[catName] = (grouped[catName] || 0) + item.amount;
                           total += item.amount;
                        });
@@ -940,7 +940,7 @@ export const Expenses: React.FC = () => {
                          }));
 
                        if (graphData.length === 0) {
-                          return <div className="text-center text-gray-400 py-6 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-xl">কোন তথ্য পাওয়া যায়নি</div>;
+                          return <div className="text-center text-gray-400 py-6 text-sm bg-gray-50 dark:bg-gray-900/50 rounded-xl">{t('noDataFound')}</div>;
                        }
 
                        return graphData.map(item => (
@@ -954,12 +954,12 @@ export const Expenses: React.FC = () => {
                                  <div className={`font-bold text-base ${graphTab === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                                    {item.value.toLocaleString('bn-BD')}
                                  </div>
-                                 <div className="text-[11px] text-gray-400 font-medium">টাকা</div>
+                                 <div className="text-[11px] text-gray-400 font-medium">{t('taka')}</div>
                               </div>
                            </div>
                            <div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
                               <span className="bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded font-bold">{item.percentage}%</span>
-                              <span className="text-[11px]">মোট {graphTab === 'income' ? 'আয়ের' : 'ব্যয়ের'} {item.percentage}%</span>
+                              <span className="text-[11px]">{t('total')} {graphTab === 'income' ? t('income') : t('expense')} {item.percentage}%</span>
                            </div>
                            <div className="w-full bg-gray-200 dark:bg-gray-700/50 rounded-full h-2 overflow-hidden shadow-inner">
                               <div className="h-full rounded-full transition-all duration-1000 ease-out relative" style={{ width: `${item.percentage}%`, backgroundColor: item.color }}>
@@ -974,16 +974,16 @@ export const Expenses: React.FC = () => {
 
                {/* Donut Chart */}
                <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
-                 <h3 className="text-base font-bold text-gray-800 dark:text-white mb-2">ক্যাটাগরি অনুপাত</h3>
+                 <h3 className="text-base font-bold text-gray-800 dark:text-white mb-2">{t('categoryRatio')}</h3>
                  {(() => {
                        const data = filteredByViewMode.filter(item => item.type === graphTab);
                        if (data.length === 0) {
-                          return <div className="text-center text-gray-400 py-10 text-sm">কোন তথ্য পাওয়া যায়নি</div>;
+                          return <div className="text-center text-gray-400 py-10 text-sm">{t('noDataFound')}</div>;
                        }
 
                        const grouped: Record<string, number> = {};
                        data.forEach(item => {
-                          const catName = t(graphTab === 'expense' ? item.category : item.source) || 'অন্যান্য';
+                          const catName = t(graphTab === 'expense' ? item.category : item.source) || t('other');
                           grouped[catName] = (grouped[catName] || 0) + item.amount;
                        });
                        
@@ -1015,7 +1015,7 @@ export const Expenses: React.FC = () => {
                                    ))}
                                  </Pie>
                                  <RechartsTooltip 
-                                   formatter={(value: number) => [`${value.toLocaleString('bn-BD')} টাকা`, 'পরিমাণ']}
+                                   formatter={(value: number) => [`${value.toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')} ${currencySymbol}`, t('amount')]}
                                    contentStyle={{ 
                                       borderRadius: '16px', 
                                       border: 'none', 
@@ -1028,7 +1028,7 @@ export const Expenses: React.FC = () => {
                              </ResponsiveContainer>
                              {/* Central Text for donut */}
                              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-                               <p className="text-xs text-gray-500 font-medium">মোট {graphTab === 'income' ? 'আয়' : 'ব্যয়'}</p>
+                               <p className="text-xs text-gray-500 font-medium">{t('total')} {graphTab === 'income' ? t('income') : t('expense')}</p>
                                <p className={`text-xl font-bold mt-1 ${graphTab === 'income' ? 'text-green-500' : 'text-red-500'}`}>
                                   {Object.values(grouped).reduce((a, b) => a + b, 0).toLocaleString('bn-BD')}
                                </p>

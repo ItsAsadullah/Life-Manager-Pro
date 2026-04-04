@@ -60,6 +60,7 @@ export const MarketMemo: React.FC = () => {
   const [sharingMemo, setSharingMemo] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [memoToDelete, setMemoToDelete] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<{ [key: string]: HTMLElement | null }>({});
@@ -316,7 +317,7 @@ const copyToClipboard = async (text: string, successMsg: string) => {
               <div class="header">
                 <div class="brand">
                   <h1>📋 ${t('marketMemoTitle')}</h1>
-                  <p>Life Manager Pro Receipts</p>
+                  <p>Hisab Nikash Receipts</p>
                 </div>
                 <div class="memo-info">
                   <h2>${memo.title}</h2>
@@ -355,7 +356,7 @@ const copyToClipboard = async (text: string, successMsg: string) => {
               
               <div class="footer">
                 <div></div>
-                <p><strong>Thank you for using Life Manager Pro!</strong></p>
+                <p><strong>Thank you for using Hisab Nikash!</strong></p>
                 <p>Designed  & Developed by Asadullah Al Galib</p>
               </div>
             </div>
@@ -594,7 +595,8 @@ const copyToClipboard = async (text: string, successMsg: string) => {
   };
 
   const handleSaveMemo = async () => {
-    if (!user || items.length === 0 || !title.trim()) return;
+    if (!user || items.length === 0 || !title.trim() || isSaving) return;
+    setIsSaving(true);
     
     try {
       if (editingMemoId) {
@@ -625,9 +627,14 @@ const copyToClipboard = async (text: string, successMsg: string) => {
         });
         setSuccessMessage(t('memoSaved'));
       }
-      closeModal();
+      setTimeout(() => {
+        closeModal();
+        setIsSaving(false);
+        setSuccessMessage(null);
+      }, 1500);
     } catch (error) {
       console.error('Error saving memo:', error);
+      setIsSaving(false);
     }
   };
 
@@ -709,9 +716,9 @@ const copyToClipboard = async (text: string, successMsg: string) => {
 
       {isAdding && createPortal(
         <div className="fixed inset-0 z-[9999] flex flex-col bg-gray-50 dark:bg-gray-900 animate-in slide-in-from-bottom-4">
-          <div className="flex justify-between items-center p-4 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white">{editingMemoId ? t('editMarketMemo') : t('createMarketMemo')}</h3>
-            <div className="flex items-center gap-2">
+          <div className="flex justify-between items-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-4 bg-gray-100 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white truncate pr-2 flex-1">{editingMemoId ? t('editMarketMemo') : t('createMarketMemo')}</h3>
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
@@ -730,14 +737,18 @@ const copyToClipboard = async (text: string, successMsg: string) => {
               </button>
               <button
                 onClick={handleSaveMemo}
-                disabled={items.length === 0 || !title.trim()}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm ml-2"
+                disabled={items.length === 0 || !title.trim() || isSaving}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors disabled:opacity-50 text-sm mx-1"
               >
-                <Save className="w-4 h-4" />
-                {editingMemoId ? t('update') : t('save')}
+                {isSaving ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                {isSaving ? t('updating') || 'Updating...' : editingMemoId ? t('update') : t('save')}
               </button>
-              <button onClick={closeModal} className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                <X size={24} />
+              <button onClick={closeModal} disabled={isSaving} className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors shrink-0 disabled:opacity-50">
+                <X size={20} />
               </button>
             </div>
           </div>
@@ -846,42 +857,42 @@ const copyToClipboard = async (text: string, successMsg: string) => {
                     </div>
                   </div>
 
-                  <div className="border border-indigo-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
-                    <table className="w-full text-sm text-left">
+                  <div className="border border-indigo-200 dark:border-gray-700 rounded-lg overflow-x-auto shadow-sm">
+                    <table className="w-full text-xs sm:text-sm text-left">
                       <thead className="bg-[#9b87f5] text-white">
                         <tr>
-                          <th className="px-3 py-3 font-medium">{t('description')}</th>
-                          <th className="px-3 py-3 font-medium text-center">{t('quantity')}</th>
-                          <th className="px-3 py-3 font-medium text-right">{t('rate')}</th>
-                          <th className="px-3 py-3 font-medium text-right">{t('totalAmount')}</th>
-                          <th className="px-3 py-3 w-10 text-center"></th>
+                          <th className="px-1 py-2 sm:px-3 sm:py-3 font-medium">{t('description')}</th>
+                          <th className="px-1 py-2 sm:px-3 sm:py-3 font-medium text-center">{t('quantity')}</th>
+                          <th className="px-1 py-2 sm:px-3 sm:py-3 font-medium text-right">{t('rate')}</th>
+                          <th className="px-1 py-2 sm:px-3 sm:py-3 font-medium text-right">{t('totalAmount')}</th>
+                          <th className="px-1 py-2 sm:px-3 sm:py-3 w-8 sm:w-10 text-center"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-indigo-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
                         {[...items].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1)).map((item, index) => (
                           inlineEditingId === item.id ? (
                             <tr key={item.id} className="bg-indigo-50 dark:bg-indigo-900/30">
-                              <td className="px-2 py-2">
-                                <input type="text" value={inlineName} onChange={e => setInlineName(e.target.value)} className="w-full px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded" />
+                              <td className="px-1 py-1.5 sm:px-2 sm:py-2">
+                                <input type="text" value={inlineName} onChange={e => setInlineName(e.target.value)} className="w-full min-w-[70px] px-1 py-1 text-xs border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded focus:ring-1 focus:ring-indigo-500 outline-none" />
                               </td>
-                              <td className="px-2 py-2">
-                                <div className="flex gap-1 justify-center">
-                                  <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-12 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-center" />
-                                  <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-14 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded p-0">
+                              <td className="px-1 py-1.5 sm:px-2 sm:py-2">
+                                <div className="flex gap-0.5 justify-center items-center flex-wrap">
+                                  <SwipeableNumberInput value={inlineQty} onChange={setInlineQty} className="w-10 sm:w-14 px-1 py-1 text-xs border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-center focus:ring-1 focus:ring-indigo-500 outline-none" />
+                                  <select value={inlineUnit} onChange={e => setInlineUnit(e.target.value)} className="w-12 sm:w-16 px-0.5 py-1 text-xs border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded focus:ring-1 focus:ring-indigo-500 outline-none">
                                     {units.map(u => <option key={u} value={u}>{t(u)}</option>)}
                                   </select>
                                 </div>
                               </td>
-                              <td className="px-2 py-2">
-                                <SwipeableNumberInput value={inlinePrice} onChange={setInlinePrice} className="w-16 px-1 py-1 text-sm border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-right ml-auto block" isPrice={true} />
+                              <td className="px-1 py-1.5 sm:px-2 sm:py-2">
+                                <SwipeableNumberInput value={inlinePrice} onChange={setInlinePrice} className="w-12 sm:w-16 px-1 py-1 text-xs border border-indigo-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded text-right ml-auto block focus:ring-1 focus:ring-indigo-500 outline-none" isPrice={true} />
                               </td>
-                              <td className="px-2 py-2 text-right text-sm font-medium text-gray-900 dark:text-white">
+                              <td className="px-1 py-1.5 sm:px-2 sm:py-2 text-right text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                                 {(Number(inlineQty) * Number(inlinePrice)).toLocaleString()}
                               </td>
-                              <td className="px-2 py-2 text-center">
-                                <div className="flex flex-col gap-1 items-center">
-                                  <button onClick={(e) => saveInlineEdit(item.id, e)} className="text-green-600 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 p-1 rounded transition-colors"><Check size={14}/></button>
-                                  <button onClick={cancelInlineEdit} className="text-red-600 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 p-1 rounded transition-colors"><X size={14}/></button>
+                              <td className="px-1 py-1.5 sm:px-2 sm:py-2 text-center">
+                                <div className="flex flex-col sm:flex-row gap-1 items-center justify-center">
+                                  <button onClick={(e) => saveInlineEdit(item.id, e)} className="text-green-600 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 p-1 sm:p-1.5 rounded transition-colors"><Check size={14}/></button>
+                                  <button onClick={cancelInlineEdit} className="text-red-600 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 p-1 sm:p-1.5 rounded transition-colors"><X size={14}/></button>
                                 </div>
                               </td>
                             </tr>

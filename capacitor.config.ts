@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.hisabnikash.app',
-  appName: 'Life Manager Pro',
+  appName: 'Hisab Nikash',
   webDir: 'dist',
   plugins: {
     FirebaseAuthentication: {

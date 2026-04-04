@@ -25,7 +25,6 @@ export const Layout: React.FC = () => {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [newReminderTime, setNewReminderTime] = useState('20:00');
-  const [newReminderMessage, setNewReminderMessage] = useState('');
 
   const handleOpenNotificationPanel = async () => {
     setIsNotificationPanelOpen(true);
@@ -46,8 +45,7 @@ export const Layout: React.FC = () => {
       }
     }
     setNotificationsEnabled(true);
-    addNotificationReminder(newReminderTime, newReminderMessage || t('notificationBody'));
-    setNewReminderMessage('');
+    addNotificationReminder(newReminderTime, t('notificationBody'));
   };
 
   const navItems = [
@@ -65,7 +63,7 @@ export const Layout: React.FC = () => {
   const isDashboard = location.pathname === '/';
 
   return (
-    <div className="flex min-h-dvh bg-gray-50 text-gray-900 font-sans dark:bg-gray-900 dark:text-gray-100">
+    <div className="flex h-dvh overflow-hidden bg-gray-50 text-gray-900 font-sans dark:bg-gray-900 dark:text-gray-100">
       {/* Sidebar (Desktop) */}
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-gray-200 shadow-sm z-10 dark:bg-gray-800 dark:border-gray-700">
         <div className="h-20 flex items-center px-8 border-b border-gray-100 dark:border-gray-700">
@@ -114,18 +112,15 @@ export const Layout: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Mobile Header (No Hamburger) */}
-        <header className="md:hidden h-16 bg-[#f7f9fc] flex items-center justify-between px-4 dark:bg-gray-800 shrink-0">
-          <div className="flex items-center space-x-2">
+        <header className="md:hidden bg-[#f7f9fc] pt-safe flex items-center justify-between px-4 dark:bg-gray-800 shrink-0 z-50 pb-2">
+          <div className="flex items-center space-x-2 mt-2">
             <img src="/logo.svg" alt="Logo" className="w-8 h-8 object-contain" />
-            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400">হিসাব নিকাশ</h1>
+            <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400">Hisab Nikash</h1>
           </div>
           
           <div className="flex items-center space-x-4">
-             <div className="flex items-center bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold dark:bg-blue-900/30 dark:text-blue-400">
-               <span className="mr-1">★</span> 10
-             </div>
              <button onClick={handleOpenNotificationPanel} className="text-gray-700 dark:text-gray-300 relative">
                <Bell size={20} className="fill-current" />
                {notificationReminders.filter((item) => item.enabled).length > 0 && (
@@ -200,56 +195,69 @@ export const Layout: React.FC = () => {
                 </div>
 
                 <div className="space-y-3 mb-5">
-                  <input
-                    type="time"
-                    value={newReminderTime}
-                    onChange={(event) => setNewReminderTime(event.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
-                  />
-                  <textarea
-                    value={newReminderMessage}
-                    onChange={(event) => setNewReminderMessage(event.target.value)}
-                    placeholder={t('reminderMessagePlaceholder')}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 resize-none"
-                  />
-                  <button
-                    onClick={handleAddReminder}
-                    className="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 flex items-center justify-center"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    {t('saveReminder')}
-                  </button>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="time"
+                      value={newReminderTime}
+                      onChange={(event) => setNewReminderTime(event.target.value)}
+                      className="flex-1 px-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 font-medium"
+                    />
+                    <button
+                      onClick={handleAddReminder}
+                      className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 flex items-center justify-center whitespace-nowrap"
+                    >
+                      <Plus size={16} className="mr-2" />
+                      {t('saveReminder')}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('notificationTimes')}:</h3>
                   {notificationReminders.length === 0 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400">{t('noRemindersYet')}</p>
                   )}
                   {notificationReminders.map((item) => (
                     <div key={item.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{item.time}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{item.message}</p>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400">
+                            <Bell size={18} />
+                          </div>
+                          <div className="flex bg-white dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                            <input
+                              type="time"
+                              value={item.time}
+                              onChange={(e) => updateNotificationReminder(item.id, { time: e.target.value })}
+                              className="px-2 py-1 text-base font-bold text-gray-900 dark:text-white bg-transparent border-none focus:ring-0 cursor-pointer"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <button
+                            type="button"
                             onClick={() => updateNotificationReminder(item.id, { enabled: !item.enabled })}
-                            className={`px-2 py-1 text-[10px] rounded-lg font-semibold ${item.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.enabled ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
                           >
-                            {item.enabled ? 'ON' : 'OFF'}
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                           </button>
                           <button
                             onClick={() => removeNotificationReminder(item.id)}
-                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                            className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-700">
+                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('reminderMessage')}:</h3>
+                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                     <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">💬 {t('notificationBody')}</p>
+                   </div>
                 </div>
               </motion.div>
             </>
@@ -269,7 +277,7 @@ export const Layout: React.FC = () => {
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 z-[60] md:hidden shadow-2xl border-t border-gray-100"
+                className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 rounded-t-[32px] p-6 z-[60] md:hidden shadow-2xl border-t border-gray-100 dark:border-gray-700"
               >
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('more')}</h2>
@@ -313,3 +321,4 @@ export const Layout: React.FC = () => {
   );
 };
 
+export default Layout;

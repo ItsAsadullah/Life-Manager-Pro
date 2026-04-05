@@ -89,7 +89,7 @@ export const Notes: React.FC = () => {
     setEditingNote(note);
     setTitle(note.title);
     setContent(note.content || '');
-    setLabels(note.labels || (note.category ? [note.category] : []));
+    setLabels(note.category ? note.category.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
     setNoteType(note.type || 'text');
     setChecklistItems(note.checklist || []);
     setSelectedColor(COLORS.find(c => c.bg === note.color) || COLORS[0]);
@@ -171,7 +171,7 @@ export const Notes: React.FC = () => {
         content: noteType === 'text' ? content : '',
         type: noteType,
         checklist: noteType === 'checklist' ? finalChecklist : [],
-        labels,
+        category: labels.join(',').substring(0, 50),
         color: selectedColor.bg,
         isPinned,
         isArchived: filter === 'archived',
@@ -535,17 +535,13 @@ const NoteCard = ({ note, onEdit, onDelete, onPin, onArchive, onToggleCheck }: a
       </div>
 
       {/* Labels section */}
-      {(note.labels?.length > 0 || note.category) && (
+      {(note.category) && (
         <div className="flex flex-wrap gap-1.5 mb-3 mt-auto">
-          {note.labels ? note.labels.map((label: string) => (
+          {note.category.split(',').map((label: string) => (
             <span key={label} className="px-2 py-0.5 bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-[10px] rounded-full font-bold truncate max-w-full">
-              {label}
+              {label.trim()}
             </span>
-          )) : (
-            <span className="px-2 py-0.5 bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-[10px] rounded-full font-bold truncate max-w-full">
-              {note.category}
-            </span>
-          )}
+          ))}
         </div>
       )}
 

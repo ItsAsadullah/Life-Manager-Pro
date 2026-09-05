@@ -16,4 +16,22 @@ data class WalletEntity(
     val isDefault: Boolean = false,             // ডিফল্ট ওয়ালেট কিনা
     val notes: String = "",                     // অতিরিক্ত নোট
     val orderIndex: Int = 0                     // প্রদর্শনের ক্রম
-)
+) {
+    companion object {
+        const val DEFAULT_CASH_ID = "wallet_cash_default"
+
+        fun createDefaultCashWallet(): WalletEntity {
+            return WalletEntity(
+                id = DEFAULT_CASH_ID,
+                name = "নগদ ক্যাশ",
+                accountType = "CASH",
+                accountNumber = "",
+                balance = 0.0,
+                colorHex = 0xFF34C759,
+                isDefault = true,
+                notes = "ডিফল্ট অ্যাকাউন্ট",
+                orderIndex = 0
+            )
+        }
+    }
+}

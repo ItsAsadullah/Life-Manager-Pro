@@ -152,17 +152,7 @@ fun WalletManagementScreen(
     // প্রাথমিক অবস্থায় কোনো ওয়ালেট তৈরি না করা থাকলেও সর্বদা নগদ ক্যাশ ওয়ালেট থাকবে
     val wallets = remember(rawWallets) {
         if (rawWallets.isEmpty()) {
-            listOf(
-                WalletEntity(
-                    id = "default_cash",
-                    name = "নগদ ক্যাশ",
-                    accountType = "CASH",
-                    balance = 0.0,
-                    colorHex = 0xFF34C759,
-                    isDefault = true,
-                    orderIndex = 0
-                )
-            )
+            listOf(WalletEntity.createDefaultCashWallet())
         } else {
             rawWallets
         }
@@ -439,10 +429,15 @@ fun WalletManagementScreen(
                     ) {
                         items(wallets, key = { it.id }) { wallet ->
                             val liveBal = getWalletLiveBalance(wallet)
+                            val cashCount = wallets.count { it.name == "নগদ ক্যাশ" || it.accountType == "CASH" }
+                            val canDeleteWallet = (!wallet.isDefault || wallets.count { it.isDefault } > 1) && 
+                                                  (wallet.name != "নগদ ক্যাশ" || cashCount > 1) && 
+                                                  wallets.size > 1
                             WalletRowItem(
                                 wallet = wallet,
                                 liveBalance = liveBal,
                                 isDark = isDark,
+                                canDelete = canDeleteWallet,
                                 onEdit = { editingWallet = wallet },
                                 onSetDefault = { viewModel.setDefaultWallet(wallet.id) },
                                 onDelete = { walletToDelete = wallet }
@@ -519,8 +514,10 @@ fun WalletManagementScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (wallet.name == "নগদ ক্যাশ" || wallet.isDefault || wallets.size <= 1) {
-                            Toast.makeText(context, "ডিফল্ট বা নগদ ক্যাশ অ্যাকাউন্ট মুছে ফেলা যাবে না", Toast.LENGTH_SHORT).show()
+                        val cashCount = wallets.count { it.name == "নগদ ক্যাশ" || it.accountType == "CASH" }
+                        val isSoleCash = (wallet.name == "নগদ ক্যাশ" || wallet.accountType == "CASH") && cashCount <= 1
+                        if (isSoleCash || wallets.size <= 1) {
+                            Toast.makeText(context, "একমাত্র নগদ ক্যাশ অ্যাকাউন্ট মুছে ফেলা যাবে না", Toast.LENGTH_SHORT).show()
                         } else {
                             viewModel.deleteWallet(wallet)
                             Toast.makeText(context, "অ্যাকাউন্ট মুছে ফেলা হয়েছে", Toast.LENGTH_SHORT).show()
@@ -549,6 +546,7 @@ private fun WalletRowItem(
     wallet: WalletEntity,
     liveBalance: Double,
     isDark: Boolean,
+    canDelete: Boolean = false,
     onEdit: () -> Unit,
     onSetDefault: () -> Unit,
     onDelete: () -> Unit
@@ -684,7 +682,7 @@ private fun WalletRowItem(
                             }
                         )
                     }
-                    if (!wallet.isDefault && wallet.name != "নগদ ক্যাশ") {
+                    if (canDelete) {
                         DropdownMenuItem(
                             text = { Text("মুছে ফেলুন (Delete)", color = Color(0xFFFF3B30)) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFFF3B30)) },

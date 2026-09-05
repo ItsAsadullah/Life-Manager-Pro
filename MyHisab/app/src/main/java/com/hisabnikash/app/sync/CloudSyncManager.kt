@@ -365,15 +365,29 @@ class CloudSyncManager private constructor() {
 
             // ১. ওয়ালেট ডাউনলোড
             val walletsSnap = userRef.collection("wallets").get().await()
+            var hasInsertedCash = false
             walletsSnap.documents.forEach { doc ->
+                val name = doc.getString("name") ?: "নগদ ক্যাশ"
+                val accountType = doc.getString("accountType") ?: "CASH"
+                val isCash = name == "নগদ ক্যাশ" || accountType == "CASH"
+
+                if (isCash) {
+                    if (hasInsertedCash) {
+                        // ক্লাউডে পুরনো ডুপ্লিকেট ক্যাশ ওয়ালেট থাকলে তা স্কিপ ও ক্লাউড থেকে ক্লিন করা
+                        deleteItemFromCloud("wallets", doc.id)
+                        return@forEach
+                    }
+                    hasInsertedCash = true
+                }
+
                 val w = WalletEntity(
-                    id = doc.getString("id") ?: doc.id,
-                    name = doc.getString("name") ?: "ক্যাশ",
-                    accountType = doc.getString("accountType") ?: "CASH",
+                    id = if (isCash) WalletEntity.DEFAULT_CASH_ID else (doc.getString("id") ?: doc.id),
+                    name = if (isCash) "নগদ ক্যাশ" else name,
+                    accountType = accountType,
                     accountNumber = doc.getString("accountNumber") ?: "",
                     balance = doc.getDouble("balance") ?: 0.0,
-                    colorHex = doc.getLong("colorHex") ?: 0xFF0A84FF,
-                    isDefault = doc.getBoolean("isDefault") ?: false,
+                    colorHex = doc.getLong("colorHex") ?: (if (isCash) 0xFF34C759 else 0xFF0A84FF),
+                    isDefault = doc.getBoolean("isDefault") ?: (isCash),
                     notes = doc.getString("notes") ?: "",
                     orderIndex = (doc.getLong("orderIndex") ?: 0L).toInt()
                 )

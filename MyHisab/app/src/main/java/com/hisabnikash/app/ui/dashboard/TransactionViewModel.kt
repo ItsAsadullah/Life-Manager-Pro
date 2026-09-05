@@ -91,41 +91,42 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
             initialValue = emptyList()
         )
 
-        // প্রাথমিক অবস্থায় কোনো ওয়ালেট না থাকলেও সর্বদা ডিফল্ট "নগদ ক্যাশ" ওয়ালেট নিশ্চিত করা
+        // প্রাথমিক অবস্থায় কোনো ওয়ালেট না থাকলেও সর্বদা ১টি মাত্র ডিফল্ট "নগদ ক্যাশ" ওয়ালেট নিশ্চিত করা
+        // এবং কোনো ডুপ্লিকেট ক্যাশ ওয়ালেট থাকলে তা স্বয়ংক্রিয়ভাবে ক্লিন করা (Deduplication)
         viewModelScope.launch {
             val existing = repository.allWallets.first()
             val allTx = repository.allTransactions.first()
             val usedMethods = allTx.mapNotNull { it.paymentMethod }.toSet()
 
-            if (existing.isEmpty()) {
-                val defaultCash = WalletEntity(
-                    name = "নগদ ক্যাশ",
-                    accountType = "CASH",
-                    balance = 0.0,
-                    colorHex = 0xFF34C759,
-                    isDefault = true,
-                    orderIndex = 0
-                )
-                repository.insertWallet(defaultCash)
-            } else {
-                val hasCash = existing.any { it.name == "নগদ ক্যাশ" || it.accountType == "CASH" }
-                if (!hasCash) {
-                    val defaultCash = WalletEntity(
-                        name = "নগদ ক্যাশ",
-                        accountType = "CASH",
-                        balance = 0.0,
-                        colorHex = 0xFF34C759,
-                        isDefault = existing.none { it.isDefault },
-                        orderIndex = 0
-                    )
-                    repository.insertWallet(defaultCash)
-                }
-                // পূর্ববর্তী ডামি ওয়ালেট (বিকাশ, নগদ, ব্যাংক একাউন্ট) যেগুলোতে ব্যালেন্স ০ ও কোনো লেনদেন নেই তা পরিষ্কার করা
-                val dummyNames = setOf("বিকাশ", "নগদ", "ব্যাংক একাউন্ট")
-                for (w in existing) {
-                    if (w.name in dummyNames && w.balance == 0.0 && w.name !in usedMethods && !w.isDefault) {
+            val cashWallets = existing.filter { it.name == "নগদ ক্যাশ" || it.accountType == "CASH" }
+
+            if (cashWallets.isEmpty()) {
+                repository.insertWallet(WalletEntity.createDefaultCashWallet())
+            } else if (cashWallets.size > 1) {
+                // একাধিক নগদ ক্যাশ ওয়ালেট থাকলে ১টি রেখে বাকিগুলো ডিলিট করা
+                val toKeep = cashWallets.find { it.balance != 0.0 } ?: cashWallets.first()
+                cashWallets.forEach { w ->
+                    if (w.id != toKeep.id) {
                         repository.deleteWallet(w)
+                        CloudSyncManager.getInstance().deleteItemFromCloud("wallets", w.id)
                     }
+                }
+                repository.setDefaultWallet(toKeep.id)
+            } else {
+                // ১টি ক্যাশ ওয়ালেট আছে; যদি কোনো ওয়ালেটই ডিফল্ট না থাকে অথবা একাধিক ডিফল্ট থাকে
+                val defaultCount = existing.count { it.isDefault }
+                if (defaultCount != 1) {
+                    val targetDefault = existing.find { it.isDefault } ?: cashWallets.first()
+                    repository.setDefaultWallet(targetDefault.id)
+                }
+            }
+
+            // পূর্ববর্তী ডামি ওয়ালেট (বিকাশ, নগদ, ব্যাংক একাউন্ট) যেগুলোতে ব্যালেন্স ০ ও কোনো লেনদেন নেই তা পরিষ্কার করা
+            val currentList = repository.allWallets.first()
+            val dummyNames = setOf("বিকাশ", "নগদ", "ব্যাংক একাউন্ট")
+            for (w in currentList) {
+                if (w.name in dummyNames && w.balance == 0.0 && w.name !in usedMethods && !w.isDefault) {
+                    repository.deleteWallet(w)
                 }
             }
 
@@ -133,22 +134,6 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
             for (tx in allTx) {
                 if (tx.paymentMethod.isNullOrBlank() || tx.paymentMethod == "ক্যাশ") {
                     repository.update(tx.copy(paymentMethod = "নগদ ক্যাশ"))
-                }
-            }
-
-            // কোনো কারণে ওয়ালেট তালিকা শূন্য হয়ে গেলে স্বয়ংক্রিয়ভাবে "নগদ ক্যাশ" ওয়ালেট পুনর্নির্মাণ করা
-            repository.allWallets.collect { currentWallets ->
-                if (currentWallets.isEmpty()) {
-                    repository.insertWallet(
-                        WalletEntity(
-                            name = "নগদ ক্যাশ",
-                            accountType = "CASH",
-                            balance = 0.0,
-                            colorHex = 0xFF34C759,
-                            isDefault = true,
-                            orderIndex = 0
-                        )
-                    )
                 }
             }
         }

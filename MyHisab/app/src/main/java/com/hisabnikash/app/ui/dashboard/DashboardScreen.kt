@@ -149,14 +149,10 @@ fun DashboardScreen(
         }
         NotificationHelper.createNotificationChannels(context)
 
-        // Initialize CloudSyncManager and auto-sync if logged in
+        // Initialize CloudSyncManager and sync if logged in (never auto-restore on empty DB to protect user's deletion)
         syncManager.initPrefs(context)
         if (AuthManager.getInstance().isLoggedIn) {
-            val restoreRes = syncManager.smartSyncOnLogin(context)
-            val count = restoreRes.getOrDefault(0)
-            if (count > 0) {
-                Toast.makeText(context, "ক্লাউড থেকে $count টি হিসাব রিস্টোর হয়েছে ✓", Toast.LENGTH_SHORT).show()
-            }
+            syncManager.syncIfHasData(context)
         } else {
             // প্রথমবার অ্যাপ ওপেন করার পর ব্যবহারকারীকে লগইন বিষয়ে অবগত করা
             if (!settingsPrefs.hasShownLoginPrompt.value) {

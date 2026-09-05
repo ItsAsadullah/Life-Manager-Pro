@@ -183,6 +183,7 @@ fun SettingsScreen(
     var showCloudRestoreDialog by remember { mutableStateOf(false) }
     var showLogoutConfirmDialog by remember { mutableStateOf(false) }
     var wipeCloudDataAlso by remember { mutableStateOf(false) }
+    var isWipingData by remember { mutableStateOf(false) }
 
     var storageInfo by remember { mutableStateOf(Pair("হিসাব করা হচ্ছে...", "হিসাব করা হচ্ছে...")) }
     LaunchedEffect(Unit) {
@@ -1062,8 +1063,10 @@ fun SettingsScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { 
-                showResetDialog = false
-                wipeCloudDataAlso = false
+                if (!isWipingData) {
+                    showResetDialog = false
+                    wipeCloudDataAlso = false
+                }
             },
             title = { 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1091,7 +1094,7 @@ fun SettingsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { wipeCloudDataAlso = !wipeCloudDataAlso }
+                                    .clickable(enabled = !isWipingData) { wipeCloudDataAlso = !wipeCloudDataAlso }
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1106,7 +1109,7 @@ fun SettingsScreen(
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = if (wipeCloudDataAlso) 
-                                            "⚠️ ক্লাউড সার্ভারের সমস্ত হিসাব মুছে যাবে। পরবর্তীতে লগইন করলেও আর ফেরত পাওয়া যাবে না।" 
+                                            "⚠️ ক্লাউড সার্ভারের সমস্ত হিসাব চিরতরে মুছে যাবে। পরবর্তীতে লগইন করলেও আর ফেরত পাওয়া যাবে না।" 
                                             else "বন্ধ রাখলে ক্লাউডে আপনার ব্যাকআপ সুরক্ষিত থাকবে (পুনরায় লগইন করে ফেরত পাবেন)।",
                                         fontSize = 11.5.sp,
                                         color = if (wipeCloudDataAlso) Color(0xFFFF3B30) else subtextColor
@@ -1114,7 +1117,8 @@ fun SettingsScreen(
                                 }
                                 Switch(
                                     checked = wipeCloudDataAlso,
-                                    onCheckedChange = { wipeCloudDataAlso = it },
+                                    onCheckedChange = { if (!isWipingData) wipeCloudDataAlso = it },
+                                    enabled = !isWipingData,
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = Color(0xFFFF3B30),
@@ -1130,32 +1134,55 @@ fun SettingsScreen(
             confirmButton = {
                 Button(
                     onClick = {
+                        if (isWipingData) return@Button
+                        isWipingData = true
                         coroutineScope.launch {
-                            val shouldWipeCloud = wipeCloudDataAlso && (currentUser != null)
-                            BackupHelper.resetAllDatabaseData(context)
-                            if (shouldWipeCloud) {
-                                val cloudRes = syncManager.deleteUserCloudData(context)
-                                if (cloudRes.isSuccess) {
-                                    Toast.makeText(context, "ডিভাইস ও ক্লাউড ব্যাকআপ সফলভাবে মুছে ফেলা হয়েছে", Toast.LENGTH_LONG).show()
+                            try {
+                                val shouldWipeCloud = wipeCloudDataAlso && (currentUser != null)
+                                if (shouldWipeCloud) {
+                                    val cloudRes = syncManager.deleteUserCloudData(context)
+                                    BackupHelper.resetAllDatabaseData(context)
+                                    if (cloudRes.isSuccess) {
+                                        Toast.makeText(context, "ডিভাইস ও ক্লাউড ব্যাকআপ চিরতরে মুছে ফেলা হয়েছে ✓", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        Toast.makeText(context, "লোকাল ডেটা মুছেছে, কিন্তু ক্লাউড মুছতে কিছু সমস্যা হয়েছে", Toast.LENGTH_LONG).show()
+                                    }
                                 } else {
-                                    Toast.makeText(context, "লোকাল ডেটা মুছেছে, কিন্তু ক্লাউড মুছতে সমস্যা হয়েছে", Toast.LENGTH_LONG).show()
+                                    BackupHelper.resetAllDatabaseData(context)
+                                    Toast.makeText(context, "ডিভাইসের লোকাল ডেটা রিসেট করা হয়েছে (ক্লাউড ব্যাকআপ অক্ষত)", Toast.LENGTH_SHORT).show()
                                 }
-                            } else {
-                                Toast.makeText(context, "ডিভাইসের লোকাল ডেটা রিসেট করা হয়েছে (ক্লাউড ব্যাকআপ অক্ষত)", Toast.LENGTH_SHORT).show()
+                                storageInfo = BackupHelper.getStorageInfo(context)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "ত্রুটি: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            } finally {
+                                isWipingData = false
+                                showResetDialog = false
+                                wipeCloudDataAlso = false
                             }
-                            storageInfo = BackupHelper.getStorageInfo(context)
+                        }
+                    },
+                    enabled = !isWipingData,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30))
+                ) {
+                    if (isWipingData) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("মুছে ফেলা হচ্ছে...", color = Color.White, fontWeight = FontWeight.Bold)
+                    } else {
+                        Text(if (wipeCloudDataAlso) "হ্যাঁ, ক্লাউড সহ মুছুন" else "হ্যাঁ, লোকাল মুছুন", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        if (!isWipingData) {
                             showResetDialog = false
                             wipeCloudDataAlso = false
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3B30))
-                ) { Text(if (wipeCloudDataAlso) "হ্যাঁ, ক্লাউড সহ মুছুন" else "হ্যাঁ, লোকাল মুছুন", color = Color.White, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { 
-                    showResetDialog = false
-                    wipeCloudDataAlso = false
-                }) { Text("বাতিল", color = textColor) }
+                    enabled = !isWipingData
+                ) { Text("বাতিল", color = textColor) }
             }
         )
     }

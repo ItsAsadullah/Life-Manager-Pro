@@ -20,6 +20,7 @@ import com.hisabnikash.app.data.local.WalletEntity
 import com.hisabnikash.app.data.local.NotificationEntity
 import com.hisabnikash.app.data.local.TransactionRepository
 import com.hisabnikash.app.reminders.ReminderScheduler
+import com.hisabnikash.app.sync.CloudSyncManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -217,22 +218,6 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-        
-        // Populate mock data if DB is empty
-        viewModelScope.launch {
-            val currentList = repository.allTransactions.first()
-            if (currentList.isEmpty()) {
-                val calendar = Calendar.getInstance()
-                val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale("bn", "BD"))
-                val dateText = dateFormat.format(calendar.time)
-                
-                val mockData = listOf(
-                    TransactionEntity(title = "দোকানের কাজ", amount = 100.0, isIncome = true, time = "১২:১৩ PM", date = dateText, category = "দোকান"),
-                    TransactionEntity(title = "খাবার", amount = 85.0, isIncome = false, time = "১২:১২ PM", date = dateText, category = "খাবার")
-                )
-                mockData.forEach { insert(it) }
-            }
-        }
     }
 
     fun insert(transaction: TransactionEntity) = viewModelScope.launch {
@@ -255,6 +240,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun delete(transaction: TransactionEntity) = viewModelScope.launch {
         repository.delete(transaction)
+        CloudSyncManager.getInstance().deleteItemFromCloud("transactions", transaction.id)
     }
 
     fun insertQuickEntry(quickEntry: QuickEntryEntity) = viewModelScope.launch {
@@ -267,6 +253,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteQuickEntry(quickEntry: QuickEntryEntity) = viewModelScope.launch {
         repository.deleteQuickEntry(quickEntry)
+        CloudSyncManager.getInstance().deleteItemFromCloud("quick_entries", quickEntry.id)
     }
 
     fun updateQuickEntryOrder(orderedEntries: List<QuickEntryEntity>) = viewModelScope.launch {
@@ -296,6 +283,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun permanentlyDeletePerson(person: PersonEntity) = viewModelScope.launch {
         repository.deletePerson(person)
+        CloudSyncManager.getInstance().deleteItemFromCloud("persons", person.id)
     }
 
     // PersonTransaction Methods
@@ -309,6 +297,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deletePersonTransaction(transaction: PersonTransactionEntity) = viewModelScope.launch {
         repository.deletePersonTransaction(transaction)
+        CloudSyncManager.getInstance().deleteItemFromCloud("person_transactions", transaction.id)
     }
 
     fun getTransactionsForPerson(personId: String): Flow<List<PersonTransactionEntity>> {
@@ -334,9 +323,15 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
             val tx = repository.getTransactionById(list.linkedExpenseId)
             if (tx != null) {
                 repository.delete(tx)
+                CloudSyncManager.getInstance().deleteItemFromCloud("transactions", tx.id)
             }
         }
+        val items = repository.getItemsForListSync(list.id)
+        items.forEach { item ->
+            CloudSyncManager.getInstance().deleteItemFromCloud("market_items", item.id)
+        }
         repository.deleteMarketList(list)
+        CloudSyncManager.getInstance().deleteItemFromCloud("market_lists", list.id)
     }
 
     fun insertMarketItem(item: MarketItemEntity) = viewModelScope.launch {
@@ -351,6 +346,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteMarketItem(item: MarketItemEntity) = viewModelScope.launch {
         repository.deleteMarketItem(item)
+        CloudSyncManager.getInstance().deleteItemFromCloud("market_items", item.id)
         syncShoppingListExpense(item.listId)
     }
 
@@ -488,6 +484,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteNote(note: NoteEntity) = viewModelScope.launch {
         repository.deleteNote(note)
+        CloudSyncManager.getInstance().deleteItemFromCloud("notes", note.id)
     }
 
     // Budget Methods
@@ -501,6 +498,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteBudget(budget: BudgetEntity) = viewModelScope.launch {
         repository.deleteBudget(budget)
+        CloudSyncManager.getInstance().deleteItemFromCloud("budgets", budget.id)
     }
 
     // Savings Goals Methods
@@ -514,6 +512,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteSavingsGoal(goal: SavingsGoalEntity) = viewModelScope.launch {
         repository.deleteSavingsGoal(goal)
+        CloudSyncManager.getInstance().deleteItemFromCloud("savings_goals", goal.id)
     }
 
     // Savings Transaction Methods
@@ -531,6 +530,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteSavingsTransaction(tx: SavingsTransactionEntity) = viewModelScope.launch {
         repository.deleteSavingsTransaction(tx)
+        CloudSyncManager.getInstance().deleteItemFromCloud("savings_transactions", tx.id)
     }
 
     // Task Item Methods
@@ -544,6 +544,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteTaskItem(task: TaskItemEntity) = viewModelScope.launch {
         repository.deleteTaskItem(task)
+        CloudSyncManager.getInstance().deleteItemFromCloud("tasks", task.id)
     }
 
     // Reminders Methods
@@ -564,6 +565,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
     fun deleteReminder(reminder: ReminderEntity) = viewModelScope.launch {
         repository.deleteReminder(reminder)
         ReminderScheduler.cancelReminder(getApplication(), reminder.id)
+        CloudSyncManager.getInstance().deleteItemFromCloud("reminders", reminder.id)
     }
 
     fun toggleReminderCompleted(reminder: ReminderEntity) = viewModelScope.launch {
@@ -605,6 +607,7 @@ class TransactionViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteWallet(wallet: WalletEntity) = viewModelScope.launch {
         repository.deleteWallet(wallet)
+        CloudSyncManager.getInstance().deleteItemFromCloud("wallets", wallet.id)
         val remaining = repository.allWallets.first()
         if (remaining.isNotEmpty() && remaining.none { it.isDefault }) {
             val nextDefault = remaining.find { it.name == "নগদ ক্যাশ" } ?: remaining.first()

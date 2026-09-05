@@ -631,5 +631,18 @@ object BackupHelper {
     suspend fun resetAllDatabaseData(context: Context) = withContext(Dispatchers.IO) {
         val db = AppDatabase.getDatabase(context)
         db.clearAllTables()
+        // ডিফল্ট নগদ ক্যাশ অ্যাকাউন্ট বজায় রাখা যাতে অ্যাপের ব্যালেন্স স্টেট সুস্থ থাকে
+        val defaultWallet = WalletEntity(
+            id = "wallet_cash_default",
+            name = "নগদ ক্যাশ",
+            accountType = "CASH",
+            accountNumber = "",
+            balance = 0.0,
+            colorHex = 0xFF34C759,
+            isDefault = true,
+            notes = "ডিফল্ট অ্যাকাউন্ট",
+            orderIndex = 0
+        )
+        db.walletDao().insertWallet(defaultWallet)
     }
 }

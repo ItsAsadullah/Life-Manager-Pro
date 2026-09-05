@@ -7,11 +7,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.hisabnikash.app.auth.AuthManager
 import com.hisabnikash.app.data.local.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
@@ -588,7 +591,7 @@ class CloudSyncManager private constructor() {
     /**
      * ক্লাউড সার্ভার (Firestore) থেকে ব্যবহারকারীর সমস্ত ব্যাকআপ স্থায়ীভাবে মুছে ফেলা
      */
-    suspend fun deleteUserCloudData(context: Context): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun deleteUserCloudData(context: Context): Result<Unit> = withContext(Dispatchers.IO + NonCancellable) {
         val userId = authManager.currentUserId
             ?: return@withContext Result.failure(Exception("ইউজার লগইন করা নেই"))
 
@@ -610,29 +613,40 @@ class CloudSyncManager private constructor() {
                 "notes",
                 "tasks",
                 "reminders",
+                "quick_entries",
+                "notifications",
                 "meta"
             )
 
             for (colName in subcollections) {
-                val snapshot = userRef.collection(colName).get().await()
-                var batch = firestore.batch()
-                var count = 0
-                for (doc in snapshot.documents) {
-                    batch.delete(doc.reference)
-                    count++
-                    if (count >= 400) {
-                        batch.commit().await()
-                        batch = firestore.batch()
-                        count = 0
+                try {
+                    val snapshot = userRef.collection(colName).get().await()
+                    var batch = firestore.batch()
+                    var count = 0
+                    for (doc in snapshot.documents) {
+                        batch.delete(doc.reference)
+                        count++
+                        if (count >= 400) {
+                            batch.commit().await()
+                            batch = firestore.batch()
+                            count = 0
+                        }
                     }
-                }
-                if (count > 0) {
-                    batch.commit().await()
+                    if (count > 0) {
+                        batch.commit().await()
+                    }
+                    Log.d(TAG, "Cleared cloud subcollection: $colName")
+                } catch (ce: Exception) {
+                    Log.w(TAG, "Error clearing subcollection $colName", ce)
                 }
             }
 
             // ব্যবহারকারীর মূল ডকুমেন্ট মুছে ফেলা
-            userRef.delete().await()
+            try {
+                userRef.delete().await()
+            } catch (ue: Exception) {
+                Log.w(TAG, "Error deleting root user document", ue)
+            }
 
             updateLastSync(context, 0L)
             _syncStatus.value = SyncStatus.IDLE
@@ -643,6 +657,53 @@ class CloudSyncManager private constructor() {
             Log.e(TAG, "Error wiping cloud data", e)
             _syncStatus.value = SyncStatus.ERROR
             _statusMessage.value = "ক্লাউড ডাটা মুছতে সমস্যা হয়েছে: ${e.localizedMessage}"
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * ক্লাউড থেকে নির্দিষ্ট একটি আইটেম তাৎক্ষণিকভাবে মুছে ফেলা (যাতে ভবিষ্যতে সিঙ্কে তা ফিরে না আসে)
+     */
+    fun deleteItemFromCloud(collectionName: String, itemId: String) {
+        val userId = authManager.currentUserId ?: return
+        CoroutineScope(Dispatchers.IO + NonCancellable).launch {
+            try {
+                firestore.collection("users")
+                    .document(userId)
+                    .collection(collectionName)
+                    .document(itemId)
+                    .delete()
+                    .await()
+                Log.d(TAG, "Item $itemId deleted from cloud collection $collectionName")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to delete item $itemId from cloud collection $collectionName", e)
+            }
+        }
+    }
+
+    /**
+     * অ্যাপ ওপেন করার সময় সাধারণ সিঙ্ক:
+     * ডিভাইসে লেনদেন বা ডাটা থাকলে তা ক্লাউডে আপলোড/সিঙ্ক করবে।
+     * ফাঁকা ডাটাবেসে স্বয়ংক্রিয়ভাবে রিস্টোর করবে না (যাতে ব্যবহারকারীর ডিলিট করা ডাটা আবার ফিরে না আসে)।
+     */
+    suspend fun syncIfHasData(context: Context): Result<String> = withContext(Dispatchers.IO) {
+        val userId = authManager.currentUserId ?: return@withContext Result.failure(Exception("ইউজার লগইন নেই"))
+        try {
+            val db = AppDatabase.getDatabase(context)
+            val localTx = db.transactionDao().getAllTransactions().first()
+            val localPersons = db.personDao().getAllPersons().first()
+            val localMarket = db.marketDao().getAllMarketLists().first()
+            val localNotes = db.noteDao().getAllNotes().first()
+
+            val hasLocalData = localTx.isNotEmpty() || localPersons.isNotEmpty() || localMarket.isNotEmpty() || localNotes.isNotEmpty()
+            if (hasLocalData) {
+                sync(context)
+            } else {
+                Log.d(TAG, "Local database is empty. Skipping auto-restore on app open to respect data deletion.")
+                Result.success("ফাঁকা ডাটাবেস, রিস্টোর বাদ দেওয়া হয়েছে")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in syncIfHasData", e)
             Result.failure(e)
         }
     }

@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // শুধুমাত্র অথেন্টিকেটেড ব্যবহারকারী নিজের পাথে রিড ও রাইট করতে পারবেন
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

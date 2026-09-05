@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background gradient circle -->
+    <path
+        android:fillColor="#1976F3"
+        android:pathData="M54,54m-54,0a54,54 0,1 1,108 0a54,54 0,1 1,-108 0" />
+    <!-- ৳ symbol (Taka sign) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,28 L70,28 Q78,28 78,36 Q78,44 70,44 L54,44 L54,50 L70,50 Q78,50 78,58 Q78,66 70,66 L54,66 L54,80 L46,80 L46,66 L38,66 L38,58 L46,58 L46,44 L38,44 Z" />
+    <!-- Horizontal line through the ৳ -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:pathData="M34,38 L74,38" />
+</vector>

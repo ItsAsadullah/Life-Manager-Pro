@@ -1,0 +1,85 @@
+{
+  "project_info": {
+    "project_number": "304667443588",
+    "firebase_url": "https://personaltracker-d374d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "personaltracker-d374d",
+    "storage_bucket": "personaltracker-d374d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304667443588:android:1300aeb50f2d85bd5f5dd1",
+        "android_client_info": {
+          "package_name": "com.hisabnikash.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "304667443588-4fv5pg8p99tvst6idhlerh480ggi18bu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hisabnikash.app",
+            "certificate_hash": "cf73f12cd09a76013e876a6bff729981ac3e85ff"
+          }
+        },
+        {
+          "client_id": "304667443588-k0o6tqocbc9jo17vkees185ms7n8khcc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hisabnikash.app",
+            "certificate_hash": "a630b46890046358711dd1f534a7cef33b676d67"
+          }
+        },
+        {
+          "client_id": "304667443588-tnj9etpugtopm8hmvieloej718qs39v5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTrq3bjkGolB8l6EkRZEdo0zaVPOkW6SU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "304667443588-tnj9etpugtopm8hmvieloej718qs39v5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304667443588:android:46677c26038232e75f5dd1",
+        "android_client_info": {
+          "package_name": "com.my.hishab"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "304667443588-tnj9etpugtopm8hmvieloej718qs39v5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTrq3bjkGolB8l6EkRZEdo0zaVPOkW6SU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "304667443588-tnj9etpugtopm8hmvieloej718qs39v5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

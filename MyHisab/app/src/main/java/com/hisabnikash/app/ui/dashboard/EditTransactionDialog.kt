@@ -46,7 +46,7 @@ fun EditTransactionDialog(
 ) {
     val context = LocalContext.current
     var selectedType by remember { mutableIntStateOf(if (transaction.isIncome) 0 else 1) } 
-    var amount by remember { mutableStateOf(transaction.amount.toString()) }
+    var amount by remember { mutableStateOf(if (transaction.amount == transaction.amount.toLong().toDouble()) transaction.amount.toLong().toString() else transaction.amount.toString()) }
     var note by remember { mutableStateOf(transaction.title) }
     var selectedCategory by remember { mutableStateOf(transaction.category) }
     var dateText by remember { mutableStateOf(transaction.date) }

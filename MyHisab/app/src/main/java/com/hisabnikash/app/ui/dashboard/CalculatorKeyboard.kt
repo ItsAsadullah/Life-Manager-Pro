@@ -25,7 +25,7 @@ fun CustomCalculatorKeyboard(
     modifier: Modifier = Modifier
 ) {
     val handleInput = { input: String ->
-        val currentVal = value.toEnglishDigits()
+        val currentVal = value.toEnglishDigits().trim()
         when (input) {
             "AC" -> onValueChange("")
             "⌫" -> if (currentVal.isNotEmpty()) onValueChange(currentVal.dropLast(1))
@@ -43,13 +43,47 @@ fun CustomCalculatorKeyboard(
                 }
             }
             else -> {
-                val lastChar = currentVal.lastOrNull()
+                val operators = charArrayOf('+', '-', '×', '÷')
                 val isOperator = input in listOf("+", "-", "×", "÷")
+                val lastChar = currentVal.lastOrNull()
                 
-                if (isOperator && lastChar != null && lastChar.toString() in listOf("+", "-", "×", "÷")) {
-                    onValueChange(currentVal.dropLast(1) + input)
+                if (isOperator) {
+                    if (currentVal.isEmpty()) {
+                        if (input == "-") onValueChange("-")
+                    } else if (lastChar != null && lastChar in operators) {
+                        onValueChange(currentVal.dropLast(1) + input)
+                    } else if (lastChar == '.') {
+                        onValueChange(currentVal.dropLast(1) + input)
+                    } else {
+                        onValueChange(currentVal + input)
+                    }
+                } else if (input == ".") {
+                    val lastOpIndex = currentVal.indexOfLast { it in operators }
+                    val lastSegment = if (lastOpIndex == -1) currentVal else currentVal.substring(lastOpIndex + 1)
+                    
+                    if (currentVal.isEmpty()) {
+                        onValueChange("0.")
+                    } else if (lastChar != null && lastChar in operators) {
+                        onValueChange("${currentVal}0.")
+                    } else if (!lastSegment.contains('.')) {
+                        onValueChange("$currentVal.")
+                    }
                 } else {
-                    onValueChange((currentVal + input).toEnglishDigits())
+                    // Digit 0-9
+                    val englishDigit = input.toEnglishDigits()
+                    val lastOpIndex = currentVal.indexOfLast { it in operators }
+                    val prefix = if (lastOpIndex == -1) "" else currentVal.substring(0, lastOpIndex + 1)
+                    val lastSegment = if (lastOpIndex == -1) currentVal else currentVal.substring(lastOpIndex + 1)
+                    
+                    if (lastSegment == "0" || lastSegment == "০" || (lastSegment.isNotEmpty() && lastSegment.all { it == '0' || it == '০' })) {
+                        if (englishDigit == "0") {
+                            onValueChange(prefix + "0")
+                        } else {
+                            onValueChange(prefix + englishDigit)
+                        }
+                    } else {
+                        onValueChange((currentVal + englishDigit).toEnglishDigits())
+                    }
                 }
             }
         }

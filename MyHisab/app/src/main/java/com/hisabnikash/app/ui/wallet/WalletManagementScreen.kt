@@ -711,7 +711,17 @@ private fun WalletFormDialog(
     var name by remember { mutableStateOf(initialWallet?.name ?: "") }
     var accountType by remember { mutableStateOf(initialWallet?.accountType ?: "CASH") }
     var accountNumber by remember { mutableStateOf(initialWallet?.accountNumber ?: "") }
-    var balanceText by remember { mutableStateOf(initialWallet?.balance?.toString()?.replace(".0", "") ?: "0") }
+    var balanceText by remember {
+        mutableStateOf(
+            if (initialWallet != null && initialWallet.balance != 0.0) {
+                if (initialWallet.balance == initialWallet.balance.toLong().toDouble()) {
+                    initialWallet.balance.toLong().toString()
+                } else {
+                    initialWallet.balance.toString()
+                }
+            } else ""
+        )
+    }
     var selectedColor by remember { mutableStateOf(initialWallet?.colorHex ?: 0xFF34C759) }
     var isDefault by remember { mutableStateOf(initialWallet?.isDefault ?: false) }
     var notes by remember { mutableStateOf(initialWallet?.notes ?: "") }
